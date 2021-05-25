@@ -2,7 +2,7 @@
   <v-data-table
     :headers="headers"
     :items="streams"
-    sort-by="calories"
+    sort-by="start"
     class="elevation-1"
   >
     <template v-slot:top>
@@ -299,6 +299,9 @@ export default {
             })
             .catch(error => console.error(error))
             .finally(() => this.close())
+        },
+        getTime(time) {
+          return this.moment(time).format('DD.MM.YY, HH:mm')
         }
     }
 }

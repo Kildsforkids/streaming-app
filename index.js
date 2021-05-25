@@ -6,6 +6,7 @@ import axios from 'axios'
 import mongoose from 'mongoose'
 import google from 'googleapis'
 import opn from 'open'
+import schedule from 'node-schedule'
 import authRouter from './routes/auth.routes.js'
 import cameraRouter from './routes/camera.routes.js'
 import userRouter from './routes/user.routes.js'
@@ -24,6 +25,7 @@ const client = {
     secret: process.env.GOOGLE_CLIENT_SECRET,
     redirect_url: `http://localhost:${PORT}/api/youtube/auth`,
     scope: [
+        'https://www.googleapis.com/auth/youtube',
         'https://www.googleapis.com/auth/youtube.readonly',
         'https://www.googleapis.com/auth/youtube.force-ssl'
     ]
@@ -44,10 +46,29 @@ const getAccessToken = (code) => {
         }
         oauth2Client.credentials = tokens
         console.log(tokens)
+        // const scheduledStartTime = new Date(2021, 4, 25, 17, 30)
+        // insertLiveBroadcast('Testing app', scheduledStartTime)
+        //     .then(response => {
+        //         console.log('Response', response.data)
+        //         insertLiveStream('TestStream')
+        //             .then(res => {
+        //                 console.log('Stream Response', res.data)
+        //                 bindLiveBroadcast(response.data.id, res.data.id)
+        //             })
+        //             .catch(error => console.log(error.message))
+        //     })
+        //     .catch(error => {
+        //         console.log(error.message.data)
+        //     })
+        getAllStreams().
+            then(response => {
+                console.log(response.data)
+            })
+            .catch(error => console.log(error.message))
     })
 }
 
-const getAllStreams = async () => {
+const getAllBroadcasts = async () => {
     try {
         return await youtube.liveBroadcasts.list({
             part: ['snippet,contentDetails,status'],
@@ -60,17 +81,74 @@ const getAllStreams = async () => {
     }
 }
 
-const insertLiveBroadcast = async () => {
+const getAllStreams = async () => {
+    try {
+        return await youtube.liveStreams.list({
+            part: ['id,snippet,cdn,status'],
+            mine: true,
+            access_token: oauth2Client.credentials
+        })
+    } catch (error) {
+        console.log(error.message)
+    }
+}
+
+const bindLiveBroadcast = async (id, streamId) => {
+    try {
+        return await youtube.liveBroadcasts.bind({
+            part: ['id,snippet,contentDetails,status'],
+            id,
+            streamId,
+            access_token: oauth2Client.credentials
+        })
+    } catch (error) {
+        console.log(error.message)
+    }
+}
+
+const insertLiveStream = async (title) => {
+    try {
+        return await youtube.liveStreams.insert({
+            part: ['id,snippet,cdn,contentDetails,status'],
+            requestBody: {
+                snippet: {
+                    title
+                },
+                cdn: {
+                    frameRate: '30fps',
+                    ingestionType: 'rtmp',
+                    resolution: '1080p'
+                }
+            },
+            access_token: oauth2Client.credentials
+        })
+    } catch (error) {
+        console.log(error.message)
+    }
+}
+
+const deleteLiveStream = async (id) => {
+    try {
+        return await youtube.liveStreams.delete({
+            id,
+            access_token: oauth2Client.credentials
+        })
+    } catch (error) {
+        console.log(error.message)
+    }
+}
+
+const insertLiveBroadcast = async (title, scheduledStartTime, privacyStatus='public') => {
     try {
         return await youtube.liveBroadcasts.insert({
-            part: 'id,snippet,contentDetails,status',
+            part: ['id,snippet,contentDetails,status'],
             requestBody: {
                 status: {
-                    privacyStatus: 'public'
+                    privacyStatus
                 },
                 snippet: {
-                    title: 'Test Broadcast',
-                    scheduledStartTime: new Date('2021-05-24T10:00:00')
+                    title,
+                    scheduledStartTime
                 }
             },
             access_token: oauth2Client.credentials
@@ -108,9 +186,8 @@ app.get('/api/youtube/auth', async (req, res) => {
         getAccessToken(code)
 })
 app.get('/api/youtube/list', async (req, res) => {
-    getAllStreams()
+    getAllBroadcasts()
         .then(response => {
-            // const result = response.data.items.map(item => item.id)
             const result = response.data.items
             res.json({ result })
         })
@@ -120,7 +197,9 @@ app.get('/api/youtube/list', async (req, res) => {
         })
 })
 app.post('/api/youtube/insert', async (req, res) => {
-    insertLiveBroadcast()
+    const {title, scheduledStartTime} = req.body
+
+    insertLiveBroadcast(title, scheduledStartTime)
         .then(response => {
             console.log('Response', response)
             res.json({ response })
@@ -142,7 +221,7 @@ app.delete('/api/youtube/delete/:id', async (req, res) => {
             res.status(403).json({ message: 'Ошибка' })
         })
 })
-app.post('/api/camera/start', async (req, res) => {
+app.post('/api/camera/live/start', async (req, res) => {
     try {
         const {ip} = req.body
         cameraGoLive(ip, 'jur7-u7h2-jcwv-t02y-1j1x')
@@ -156,7 +235,7 @@ app.post('/api/camera/start', async (req, res) => {
         res.status(403).json({ message: 'Ошибка' })
     }
 })
-app.post('/api/camera/stop', async (req, res) => {
+app.post('/api/camera/live/stop', async (req, res) => {
     try {
         const {ip} = req.body
         cameraStopLive(ip)
@@ -170,60 +249,122 @@ app.post('/api/camera/stop', async (req, res) => {
     }
 })
 
+async function cameraGetOptions(ip, option) {
+    await axios.post(`http://${ip}:20000/osc/commands/execute`, {
+        name: 'camera._getOptions',
+        parameters: {
+            property: option
+        }
+    }, options)
+        .then(response => console.log(response.data))
+        .catch(error => console.error(error.message))
+}
+
+async function cameraStartPreview(ip) {
+    await axios.post(`http://${ip}:20000/osc/commands/execute`, {
+        name: 'camera._startPreview',
+        parameters: {
+            origin: {
+                mime: 'h264',
+                width: 1920,
+                height: 1440,
+                framerate: 30,
+                bitrate: 15000
+            },
+            stiching: {
+                mode: 'pano',
+                mime: 'h264',
+                width: 3840,
+                height: 1920,
+                framerate: 30,
+                bitrate: 10240
+            },
+            // audio: {
+            //     mime: 'aac',
+            //     sampleFormat: 's16',
+            //     channelLayout: 'stereo',
+            //     samplerate: 48000,
+            //     bitrate: 128
+            // }
+        },
+        stabilization: false
+    }, options)
+        .then(response => {
+            console.log(response.data)
+            setTimeout(cameraStopPreview, 60 * 1000, ip)
+        })
+        .catch(error => console.error(error.message))
+}
+
+async function cameraStopPreview(ip) {
+    await axios.post(`http://${ip}:20000/osc/commands/execute`, {
+        name: 'camera._stopPreview'
+    }, options)
+        .then(response => console.log(response.data))
+        .catch(error => console.error(error.message))
+}
+
 async function cameraStopLive(ip) {
-    await axios.post(`http://${ip}:2000/osc/commands/execute`, {
+    await axios.post(`http://${ip}:20000/osc/commands/execute`, {
         name: "camera._stopLive"
-    })
+    }, options)
 }
 
 async function cameraGoLive(ip, streamKey) {
-    const string = ''
-    const int = 0
     await axios.post(`http://${ip}:20000/osc/commands/execute`, {
-            name: "camera._startLive",
+            name: 'camera._startLive',
             parameters: {
-              "origin":{
-                // "mime": string,
-                "width": 3840,
-                "height": 1920,
-                "framerate": 30,
-                "bitrate": 15,
-                // "logMode": int, 
-                "liveUrl": 'rtmp://a.rtmp.youtube.com/live2',//only available in origin live mode, pass rtmp url without stream name. eg. rtmp://127.0.0.1/live
-                "saveOrigin": false 
+            origin: {
+                mime: 'h264',
+                width: 1920,
+                height: 1440,
+                framerate: 30,
+                bitrate: 15000,
+                logMode: 0,
+                // rtmp://a.rtmp.youtube.com/live2
+                liveUrl: 'rtmp://192.168.1.188/live',//only available in origin live mode, pass rtmp url without stream name. eg. rtmp://127.0.0.1/live
+                saveOrigin: false 
               },
-              "stiching":{ //stitching is only needed in normal mode, do not pass this param for origin live mode
-                "mode": 'normal',
-                // "mime": string,
-                "width": 3840,
-                "height": 1920,
-                "framerate":30,
-                "bitrate": 15,
-                // "map": string, 
-                "_liveUrl": `rtmp://a.rtmp.youtube.com/live2/${streamKey}`, //rtmp url, like rtmp://127.0.0.1/live/test
-                "liveOnHdmi": false, 
-                "fileSave": false //save live stream on the camera.
+              stiching: { //stitching is only needed in normal mode, do not pass this param for origin live mode
+                mode: 'pano',
+                mime: 'h264',
+                width: 3840,
+                height: 1920,
+                framerate: 30,
+                bitrate: 10240,
+                map: 'equirectangular',
+                // rtmp://a.rtmp.youtube.com/live2/${streamKey}
+                _liveUrl: `rtmp://192.168.1.188/live/live`, //rtmp url, like rtmp://127.0.0.1/live/test
+                liveOnHdmi: false, 
+                fileSave: false //save live stream on the camera.
               },
-              "audio":{
-                // "mime":string,
-                // "sampleFormat":string,
-                // "channelLayout":string,
-                // "samplerate":int,
-                "bitrate": 15
-              }
+              audio: {
+                mime: 'aac',
+                sampleFormat: 's16',
+                channelLayout: 'stereo',
+                samplerate: 48000,
+                bitrate: 128
+            }
             },
-            "autoConnect": {
-              "enable": true,
-              "interval": 20000, // retry delay in ms.
-              "count": -1 //count = -1 means always try to reconnect
+            autoConnect: {
+              enable: true,
+              interval: 20000, // retry delay in ms.
+              count: -1 //count = -1 means always try to reconnect
             },
             stabilization: false
     }, options)
-        .then(response => console.log(response))
-        .catch(error => console.error(error))
+        .then(response => {
+            console.log(response.data)
+            setTimeout(cameraStopLive, 2 * 60 * 1000, ip)
+        })
+        .catch(error => console.error(error.message))
 }
 
-async function connectCamera(ip) {
+async function connectCamera(ip, retry=3) {
+    if (retry <= 0) {
+        cameraController.updateCamera(ip, { status: 'Неактивна' })
+        setTimeout(connectCamera, 60000, ip)
+    }
     await axios.post(`http://${ip}:20000/osc/commands/execute`, {
             name: 'camera._connect',
             parameters: {
@@ -233,7 +374,7 @@ async function connectCamera(ip) {
         })
         .then(res => {
             if (res.data.state === 'done') {
-                console.log('yes')
+                console.log(`Успешное подключение к ${ip}`)
                 cameraController.updateCamera(ip, { status: 'Активна' })
                 options = {
                     headers: {
@@ -243,21 +384,30 @@ async function connectCamera(ip) {
                     }
                 }
     
-                const statePolling = () => axios.post(`http://${ip}:20000/osc/state`, {}, options)
+                const statePolling = async () => await axios.post(`http://${ip}:20000/osc/state`, {}, options)
                     .then(res => {
-                        console.log('polling')
+                        // console.log('polling')
                         setTimeout(statePolling, 1000)
                     })
                     .catch(error => {
-                        console.error(error)
-                        cameraController.updateCamera(ip, { status: 'Неактивна' })
+                        // console.error(error)
+                        console.log(`Произошла ошибка при получении состояния у ${ip}`)
+                        // cameraController.updateCamera(ip, { status: 'Неактивна' })
+                        setTimeout(connectCamera, 30000, ip, retry - 1)
                     })
                 
                 statePolling()
+
+                // cameraGetOptions(ip, 'map')
+                // cameraStartPreview(ip)
+                // cameraGoLive(ip, 'jur7-u7h2-jcwv-t02y-1j1x')
             }
         })
         .catch(error => {
-            console.error(error)
+            // console.error(error)
+            console.log(`Произошла ошибка соединения с ${ip}, попытка переподключения...`)
+            console.log(error.message)
+            setTimeout(connectCamera, 30000, ip, retry - 1)
         })
 }
 
@@ -267,9 +417,16 @@ async function start() {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             useCreateIndex: true,
-            useFindAndModify: true
+            useFindAndModify: false
         })
-        app.listen(PORT, () => console.log(`Server is runnning on port ${PORT}...`))
+        // const tokens = {
+        //     access_token: process.env.GOOGLE_TOKEN,
+        //     scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl',
+        //     token_type: 'Bearer',
+        //     expiry_date: 1621902314985
+        // }
+        // oauth2Client.credentials = tokens
+        app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}...`))
     } catch (error) {
         console.error(error)
     }
@@ -278,6 +435,12 @@ async function start() {
 start()
 // googleAuth()
 // connectCamera('192.168.1.188')
+//     .then(() => {
+//         const date = new Date(2021, 4, 25, 16, 58)
+//         const job = schedule.scheduleJob(date, () => {
+//             cameraStartPreview('192.168.1.188')
+//         })
+//     })
 // cameraController.getAllCameras()
 //     .then(response => {
 //         response.map(camera => {

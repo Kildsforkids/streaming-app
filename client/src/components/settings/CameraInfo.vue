@@ -3,7 +3,7 @@
         <h2>{{ `Камера ${index}` }}</h2>
         <h5>{{ `IP-адрес ${camera.ip}` }}</h5>
         <h5>{{ `Аудитория ${camera.classroom.name}` }}</h5>
-        <div :class="`body-2 white--text ${camera.status === 'Неактивна' ? 'red' : 'green'}`" v-text="`Статус: ${camera.status}`"></div>
+        <div :class="`body-2 white--text ${cameraStatusColor}`" v-text="`Статус: ${camera.status}`"></div>
         <v-divider class="mt-5"></v-divider>
     </div>
 </template>
@@ -23,6 +23,15 @@ export default {
         classrooms: {
             type: Array,
             required: true
+        }
+    },
+    computed: {
+        cameraStatusColor() {
+            switch (this.camera.status) {
+                case 'Неактивна': return 'red'
+                case 'Активна': return 'green'
+            }
+            return ''
         }
     }
 }

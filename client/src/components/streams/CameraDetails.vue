@@ -32,7 +32,7 @@
           <div>
               <h3>{{ `Камера ${camera.classroom.name}` }}</h3>
               <h5>{{ `IP-адрес: ${camera.ip}` }}</h5>
-              <h5 :class="cameraStatusColor">{{ `Статус: ${camera.status}` }}</h5>
+              <div :class="`body-2 white--text ${cameraStatusColor}`" v-text="`Статус: ${camera.status}`"></div>
           </div>
       </v-col>
   </v-row>
@@ -52,8 +52,9 @@ export default {
     }),
     computed: {
         cameraStatusColor() {
-            if (this.camera.status === 'Неактивна') {
-                return 'red'
+            switch (this.camera.status) {
+                case 'Неактивна': return 'red'
+                case 'Активна': return 'green'
             }
             return ''
         }
