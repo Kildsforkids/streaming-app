@@ -1,8 +1,9 @@
 import {Router} from 'express'
 import Camera from '../models/Camera.js'
-import Classroom from '../models/Classroom.js'
+import CameraController from '../controllers/CameraController.js'
 
 const router = Router()
+const cameraController = new CameraController()
 
 router.get('/', async (req, res) => {
     try {
@@ -38,5 +39,32 @@ router.post('/', async(req, res) => {
         res.status(500).json({ message: 'Что-то пошло не так, попробуйте снова' })
     }
 })
+router.post('/live/start', async (req, res) => {
+    try {
+        const {ip} = req.body
+        cameraController.cameraGoLive(ip, 'jur7-u7h2-jcwv-t02y-1j1x')
+            .then(response => {
+                console.log('Response', response)
+                res.json({ response })
+            })
+        res.json({ message: req.body })
+    } catch (error) {
+        console.error(error)
+        res.status(403).json({ message: 'Ошибка' })
+    }
+})
+router.post('/live/stop', async (req, res) => {
+    try {
+        const {ip} = req.body
+        cameraController.cameraStopLive(ip)
+            .then(response => {
+                console.log('Response', response)
+                res.json({ response })
+            })
+    } catch (error) {
+        console.error(error)
+        res.status(403).json({ message: 'Ошибка' })
+    }
+})
 
-export default router
+export { router, cameraController }
