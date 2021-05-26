@@ -1,5 +1,6 @@
 import google from 'googleapis'
 import opn from 'open'
+import StreamModel from '../models/Stream.js'
 
 export default class StreamController {
 
@@ -154,6 +155,23 @@ export default class StreamController {
         }
         catch (error) {
             console.log(error)
+        }
+    }
+
+    async updateStream(id, payload) {
+        try {
+            const {name, start, end, camera, status} = payload
+            
+            const stream = StreamModel.findByIdAndUpdate(
+                id,
+                { name, start, end, camera, status },
+                { new: true }
+            )
+
+            return stream
+            
+        } catch (error) {
+            console.error(error)
         }
     }
 }

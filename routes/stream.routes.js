@@ -1,23 +1,19 @@
 import {Router} from 'express'
 import StreamModel from '../models/Stream.js'
 import StreamController from '../controllers/StreamController.js'
+import { createJob, cancelJob } from '../controllers/JobController.js'
 
 const router = Router()
-// const client = {
-//     id: process.env.GOOGLE_CLIENT_ID,
-//     secret: process.env.GOOGLE_CLIENT_SECRET,
-//     redirect_url: `http://localhost:${process.env.PORT}/api/stream/auth`,
-//     scope: [
-//         'https://www.googleapis.com/auth/youtube',
-//         'https://www.googleapis.com/auth/youtube.readonly',
-//         'https://www.googleapis.com/auth/youtube.force-ssl'
-//     ]
-// }
 const streamController = new StreamController()
 
 router.get('/', async (req, res) => {
     try {
-        const streams = await StreamModel.find().populate('camera')
+        const streams = await StreamModel.find().populate({
+            path: 'camera',
+            populate: {
+                path: 'classroom'
+            }
+        })
 
         res.json(streams)
 
@@ -27,15 +23,60 @@ router.get('/', async (req, res) => {
 })
 router.post('/', async(req, res) => {
     try {
-        const {name, start, end, camera} = req.body
+        const {name, start, end, camera, id} = req.body
 
-        const stream = new StreamModel({
-            name, start, end, camera
-        })
+        if (id) {
+            await streamController.updateStream(id, { name, start, end, camera })
+                .then(response => {
+                    // cancelJob(id + '-start')
+                    console.log(response)
+                    // createJob()
+                    res.json({ message: 'Событие обновлено', response })
+                })
+                .catch(error => {
+                    console.log(error)
+                    res.status(500).json({ message: 'Не удалось обновить данные' })
+                })
+        } else {
+            const stream = new StreamModel({
+                name, start, end, camera: camera._id
+            })
+    
+            await stream.save()
+            //     .then(response => {
+            //         console.log(response.populate({
+            //             path: 'camera',
+            //             populate: {
+            //                 path: 'classroom'
+            //             }
+            //         }))
+            //     })
 
-        await stream.save()
+            // stream = stream.populate({
+            //     path: 'camera',
+            //     populate: {
+            //         path: 'classroom'
+            //     }
+            // })
 
-        res.status(201).json({ message: 'Событие добавлено', stream })
+            // createJob(stream._id + '-start', start, streamController.insertLiveBroadcast, [name, start])
+            createJob(stream._id + '-start', start, () => console.log('hello'))
+
+            res.status(201).json({ message: 'Событие добавлено', stream })
+        }
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: 'Что-то пошло не так, попробуйте снова' })
+    }
+})
+router.delete('/:id', async (req, res) => {
+    try {
+        const {id} = req.params
+        await StreamModel.findByIdAndDelete(id)
+
+        cancelJob(id + '-start')
+
+        res.json({ message: 'Событие удалено' })
 
     } catch (error) {
         console.log(error)
@@ -72,7 +113,7 @@ router.post('/insert', async (req, res) => {
         })
 })
 router.delete('/delete/:id', async (req, res) => {
-    const {id} = req.query
+    const {id} = req.params
     streamController.deleteLiveBroadcast(id)
         .then(response => {
             console.log('Response', response)

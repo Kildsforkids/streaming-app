@@ -4,7 +4,7 @@ import express from 'express'
 import cors from 'cors'
 // import axios from 'axios'
 import mongoose from 'mongoose'
-import schedule from 'node-schedule'
+// import schedule from 'node-schedule'
 import authRouter from './routes/auth.routes.js'
 import { router as cameraRouter, cameraController } from './routes/camera.routes.js'
 import userRouter from './routes/user.routes.js'
@@ -30,23 +30,23 @@ const PORT = process.env.PORT || 5000
 // const streamController = new StreamController(client)
 // const cameraController = new CameraController()
 
-const createJob = async (id, date, worker, params) => {
-    try {
-        schedule.scheduleJob(id, date, () => {
-            worker(...params)
-        })
-    } catch (error) {
-        console.log(error.message)
-    }
-}
+// const createJob = async (id, date, worker, params) => {
+//     try {
+//         schedule.scheduleJob(id, date, () => {
+//             worker(...params)
+//         })
+//     } catch (error) {
+//         console.log(error.message)
+//     }
+// }
 
-const cancelJob = async (id) => {
-    try {
-        return schedule.cancelJob(id)
-    } catch (error) {
-        console.log(error.message)
-    }
-}
+// const cancelJob = async (id) => {
+//     try {
+//         return schedule.cancelJob(id)
+//     } catch (error) {
+//         console.log(error.message)
+//     }
+// }
 
 const app = express()
 
@@ -170,7 +170,16 @@ const client = {
 streamController.setClient(client)
 
 start()
-streamController.googleAuth()
+// streamController.googleAuth()
+// cameraController.getAllCameras()
+//     .then(response => {
+//         response.map(camera => {
+//             console.log(camera.ip)
+//             cameraController.connectCamera(camera.ip)
+//         })
+//     })
+//     .catch(error => console.error(error))
+// streamController.googleAuth()
 // const date = new Date(2021, 4, 25, 23, 22)
 // createJob('1', date, hello, ['hello'])
 // setTimeout(() => {

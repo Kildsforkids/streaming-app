@@ -86,7 +86,16 @@ export default class CameraController {
         }, this.options)
     }
 
-    async cameraGoLive(ip, streamKey) {
+    async cameraGoLive(ip, streamKey='') {
+        let liveUrl = `rtmp://${ip}/live`
+        let _liveUrl = `rtmp://${ip}/live/live`
+        if (streamKey) {
+            liveUrl = 'rtmp://a.rtmp.youtube.com/live2'
+            _liveUrl = `rtmp://a.rtmp.youtube.com/live2/${streamKey}`
+        }
+        console.log(liveUrl)
+        console.log(_liveUrl)
+        return
         await axios.post(`http://${ip}:20000/osc/commands/execute`, {
             name: 'camera._startLive',
             parameters: {
@@ -131,7 +140,6 @@ export default class CameraController {
         }, options)
             .then(response => {
                 console.log(response.data)
-                setTimeout(this.cameraStopLive, 2 * 60 * 1000, ip)
             })
             .catch(error => console.error(error.message))
     }
@@ -139,7 +147,9 @@ export default class CameraController {
     async connectCamera(ip, retry=3) {
         if (retry <= 0) {
             this.updateCamera(ip, { status: 'Неактивна' })
-            setTimeout(this.connectCamera, 60000, ip)
+            setTimeout(() => {
+                this.connectCamera(ip)
+            }, 60000)
         }
         await axios.post(`http://${ip}:20000/osc/commands/execute`, {
                 name: 'camera._connect',
@@ -169,7 +179,9 @@ export default class CameraController {
                             // console.error(error)
                             console.log(`Произошла ошибка при получении состояния у ${ip}`)
                             // cameraController.updateCamera(ip, { status: 'Неактивна' })
-                            setTimeout(this.connectCamera, 30000, ip, retry - 1)
+                            setTimeout(() => {
+                                this.connectCamera(ip, retry - 1)
+                            }, 30000)
                         })
                     
                     statePolling()
@@ -183,7 +195,9 @@ export default class CameraController {
                 // console.error(error)
                 console.log(`Произошла ошибка соединения с ${ip}, попытка переподключения...`)
                 console.log(error.message)
-                setTimeout(this.connectCamera, 30000, ip, retry - 1)
+                setTimeout(() => {
+                    this.connectCamera(ip, retry - 1)
+                }, 30000)
             })
     }
 }

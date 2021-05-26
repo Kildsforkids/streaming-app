@@ -3,6 +3,8 @@
     :headers="headers"
     :items="streams"
     sort-by="start"
+    no-data-text="Нет запланированных событий"
+    no-results-text="По Вашему запросу ничего не найдено"
     class="elevation-1"
   >
     <template v-slot:top>
@@ -98,21 +100,21 @@
                       label="Название"
                     ></v-text-field>
                   </v-row>
-                  <v-row>
+                  <!-- <v-row>
                     <v-text-field
                       v-model="editedItem.link"
                       label="Ссылка"
                       disabled
                     ></v-text-field>
-                  </v-row>
+                  </v-row> -->
                   <v-row>
                   <v-select
                     :items="cameras"
                     label="Аудитория"
                     no-data-text="Нет доступных аудиторий"
                     item-text="classroom.name"
-                    item-value="_id"
-                    v-model="editedItem.cameraId">
+                    return-object
+                    v-model="editedItem.camera">
                   </v-select>
                 </v-row>
               </v-container>
@@ -191,44 +193,37 @@ export default {
     },
     data: () => ({
         streams: [],
-        // start: new Date().toISOString().substr(0, 10),
         menuStart: false,
         menuEnd: false,
         headers: [
-            {
-                text: 'Дата начала',
-                align: 'start',
-                sortable: true,
-                value: 'start',
-            },
-            {
-                text: 'Дата окончания',
-                sortable: true,
-                value: 'end',
-            },
+            { text: 'Дата начала', align: 'start', value: 'start' },
+            { text: 'Дата окончания', value: 'end' },
             { text: 'Название', value: 'name' },
-            { text: 'Ссылка', value: 'link' },
-            { text: 'Статус', value: 'status' },
+            { text: 'Аудитория', value: 'camera.classroom.name' },
+            { text: 'Ссылка', value: 'link', sortable: false },
+            { text: 'Статус', value: 'status', sortable: false },
             { text: 'Действие', value: 'actions', sortable: false }
         ],
         dialog: false,
         dialogDelete: false,
         editedIndex: -1,
         editedItem: {
+            _id: '',
             name: 'Новая трансляция',
             start: new Date().toISOString().substr(0, 10),
             end: new Date().toISOString().substr(0, 10),
             link: 'https://www.youtube.com',
             status: 'Не задана',
-            cameraId: ''
+            camera: {}
         },
         defaultItem: {
+            _id: '',
             name: 'Новая трансляция',
             start: new Date().toISOString().substr(0, 10),
             end: new Date().toISOString().substr(0, 10),
             link: 'https://www.youtube.com',
             status: 'Не задана',
-            cameraId: ''
+            camera: {}
         }
     }),
     computed: {
@@ -251,8 +246,8 @@ export default {
         async initialize() {
             await this.axios.get('http://localhost:5000/api/stream')
                 .then(response => {
-                  // console.log(response)
-                  this.streams = response.data.map(data => ({...data, status: 'Ожидает'}))
+                  console.log(response.data)
+                  this.streams = response.data
                 })
                 .catch(error => console.error(error))
         },
@@ -266,9 +261,16 @@ export default {
             this.editedItem = {...item}
             this.dialogDelete = true
         },
-        deleteItemConfirm() {
-            this.streams.splice(this.editedIndex, 1)
-            this.closeDelete()
+        async deleteItemConfirm() {
+            await this.axios.delete(`http://localhost:5000/api/stream/${this.editedItem._id}`)
+              .then(response => {
+                console.log(response)
+                this.streams.splice(this.editedIndex, 1)
+                this.closeDelete()
+              })
+              .catch(error => {
+                console.error(error)
+              })
         },
         close() {
             this.dialog = false
@@ -282,19 +284,22 @@ export default {
         },
         async save() {
             await this.axios.post('http://localhost:5000/api/stream', {
+              id: this.editedItem._id,
               name: this.editedItem.name,
               start: this.editedItem.start,
-              end: this.editedItem.end, 
+              end: this.editedItem.end,
               camera: this.editedItem.camera
             })
             .then(response => {
               console.log(response.data)
               if (this.editedIndex > -1) {
                 // console.log(this.editedItem)
-                Object.assign(this.streams[this.editedIndex], this.editedItem)
+                // Object.assign(this.streams[this.editedIndex], this.editedItem)
+                Object.assign(this.streams[this.editedIndex], response.data.stream)
             } else {
                 // console.log(this.editedItem)
-                this.streams.push(this.editedItem)
+                // this.streams.push(this.editedItem)
+                this.streams.push(response.data.stream)
             }
             })
             .catch(error => console.error(error))
