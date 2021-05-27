@@ -7,6 +7,12 @@
     no-results-text="По Вашему запросу ничего не найдено"
     class="elevation-1"
   >
+    <template v-slot:item.start="item">
+      <span>{{ getTime(item.value) }}</span>
+    </template>
+    <template v-slot:item.end="item">
+      <span>{{ getTime(item.value) }}</span>
+    </template>
     <template v-slot:top>
       <v-toolbar
         flat
@@ -41,6 +47,24 @@
             <v-card-text>
               <v-container>
                 <v-row>
+                  <v-datetime-picker
+                    label="Дата и время начала"
+                    clearText="Сбросить"
+                    okText="ОК"
+                    :datePickerProps="datePickerProps"
+                    :timePickerProps="timePickerProps"
+                    v-model="editedItem.start">
+                    <template slot="dateIcon">
+                      Дата
+                      <!-- <v-icon>fas fa-calendar</v-icon> -->
+                    </template>
+                    <template slot="timeIcon">
+                      Время
+                      <!-- <v-icon>fas fa-clock</v-icon> -->
+                    </template>
+                  </v-datetime-picker>
+                </v-row>
+                <!-- <v-row>
                     <v-menu
                       v-model="menuStart"
                       :close-on-content-click="false"
@@ -59,6 +83,7 @@
                           v-on="on"
                         ></v-text-field>
                       </template>
+                      
                       <v-date-picker
                         v-model="editedItem.start"
                         @input="menuStart = false"
@@ -66,8 +91,26 @@
                         locale="ru-ru">
                       </v-date-picker>
                     </v-menu>
-                </v-row>
+                </v-row> -->
                 <v-row>
+                  <v-datetime-picker
+                    label="Дата и время окончания"
+                    clearText="Сбросить"
+                    okText="ОК"
+                    :datePickerProps="datePickerProps"
+                    :timePickerProps="timePickerProps"
+                    v-model="editedItem.end">
+                    <template slot="dateIcon">
+                      Дата
+                      <!-- <v-icon>fas fa-calendar</v-icon> -->
+                    </template>
+                    <template slot="timeIcon">
+                      Время
+                      <!-- <v-icon>fas fa-clock</v-icon> -->
+                    </template>
+                  </v-datetime-picker>
+                </v-row>
+                <!-- <v-row>
                     <v-menu
                       v-model="menuEnd"
                       :close-on-content-click="false"
@@ -93,7 +136,7 @@
                         locale="ru-ru">
                       </v-date-picker>
                     </v-menu>
-                  </v-row>
+                  </v-row> -->
                   <v-row>
                     <v-text-field
                       v-model="editedItem.name"
@@ -141,7 +184,7 @@
         </v-dialog>
         <v-dialog v-model="dialogDelete" max-width="500px">
           <v-card>
-            <v-card-title class="headline">Вы уверены, что хотите удалить данное событие?</v-card-title>
+            <v-card-title class="headline">Вы уверены, что хотите удалить событие?</v-card-title>
             <v-card-actions>
               <v-spacer></v-spacer>
               <v-btn color="blue darken-1" text @click="closeDelete">Отмена</v-btn>
@@ -167,14 +210,14 @@
         mdi-delete
       </v-icon>
     </template>
-    <template v-slot:no-data>
+    <!-- <template v-slot:no-data>
       <v-btn
         color="primary"
         @click="initialize"
       >
         Сбросить
       </v-btn>
-    </template>
+    </template> -->
   </v-data-table>
 </template>
 
@@ -189,10 +232,19 @@ export default {
       cameras: {
         type: Array,
         required: true
+      },
+      streams: {
+        type: Array,
+        required: true
       }
     },
     data: () => ({
-        streams: [],
+        datePickerProps: {
+          locale: 'ru-ru'
+        },
+        timePickerProps: {
+          format: '24hr'
+        },
         menuStart: false,
         menuEnd: false,
         headers: [
@@ -210,8 +262,8 @@ export default {
         editedItem: {
             _id: '',
             name: 'Новая трансляция',
-            start: new Date().toISOString().substr(0, 10),
-            end: new Date().toISOString().substr(0, 10),
+            start: new Date(),
+            end: new Date(),
             link: 'https://www.youtube.com',
             status: 'Не задана',
             camera: {}
@@ -219,8 +271,8 @@ export default {
         defaultItem: {
             _id: '',
             name: 'Новая трансляция',
-            start: new Date().toISOString().substr(0, 10),
-            end: new Date().toISOString().substr(0, 10),
+            start: new Date(),
+            end: new Date(),
             link: 'https://www.youtube.com',
             status: 'Не задана',
             camera: {}
@@ -239,20 +291,22 @@ export default {
             newValue || this.closeDelete()
         }
     },
-    created() {
-        this.initialize()
-    },
+    // created() {
+    //     this.initialize()
+    // },
     methods: {
-        async initialize() {
-            await this.axios.get('http://localhost:5000/api/stream')
-                .then(response => {
-                  console.log(response.data)
-                  this.streams = response.data
-                })
-                .catch(error => console.error(error))
-        },
+        // async initialize() {
+        //     await this.axios.get('http://localhost:5000/api/stream')
+        //         .then(response => {
+        //           console.log(response.data)
+        //           this.streams = response.data
+        //         })
+        //         .catch(error => console.error(error))
+        // },
         editItem(item) {
             this.editedIndex = this.streams.indexOf(item)
+            item.start = new Date(item.start)
+            item.end = new Date(item.end)
             this.editedItem = {...item}
             this.dialog = true
         },

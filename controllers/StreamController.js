@@ -34,7 +34,7 @@ export default class StreamController {
                 return
             }
             this.oauth2Client.credentials = tokens
-            console.log(tokens)
+            // console.log(tokens)
             // const scheduledStartTime = new Date(2021, 4, 25, 17, 30)
             // insertLiveBroadcast('Testing app', scheduledStartTime)
             //     .then(response => {
@@ -72,9 +72,15 @@ export default class StreamController {
         try {
             return await this.youtube.liveBroadcasts.insert({
                 part: ['id,snippet,contentDetails,status'],
+                contentDetails: {
+                    boundStreamId: 'na5YvEy1EoxdqZZqSY5RJw1612744127069367',
+                    latencyPreference: 'normal',
+                    projection: '360'
+                },
                 requestBody: {
                     status: {
-                        privacyStatus
+                        privacyStatus,
+                        selfDeclaredMadeForKids: false
                     },
                     snippet: {
                         title,
@@ -160,16 +166,31 @@ export default class StreamController {
 
     async updateStream(id, payload) {
         try {
-            const {name, start, end, camera, status} = payload
+            const {name, start, end, camera} = payload
             
             const stream = StreamModel.findByIdAndUpdate(
                 id,
-                { name, start, end, camera, status },
+                { name, start, end, camera },
                 { new: true }
             )
 
             return stream
             
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    async updateStreamStatus(id, status) {
+        try {
+            const stream = StreamModel.findByIdAndUpdate(
+                id,
+                { status },
+                { new: true }
+            )
+
+            return stream
+
         } catch (error) {
             console.error(error)
         }

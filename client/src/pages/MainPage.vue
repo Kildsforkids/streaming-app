@@ -2,11 +2,11 @@
     <div>
         <Navbar />
         <v-container>
-            <PreviewPanel v-if="getAllCameras.length > 0" :cameras="getAllCameras" :classrooms="getAllClassrooms" />
+            <PreviewPanel v-if="getAllCameras.length > 0" :cameras="getAllCameras" :classrooms="getAllClassrooms" :streams="getAllStreams" />
             <div v-else>
                 <h2>Нет привязанных камер</h2>
             </div>
-            <StreamsTable :cameras="getAllCameras" />
+            <StreamsTable :cameras="getAllCameras" :streams="getAllStreams" />
         </v-container>
     </div>
 </template>
@@ -27,17 +27,20 @@ export default {
     created() {
         this.fetchCameras()
         this.fetchClassrooms()
+        this.fetchStreams()
     },
     computed: {
         ...mapGetters([
             'getAllCameras',
-            'getAllClassrooms'
+            'getAllClassrooms',
+            'getAllStreams'
         ])
     },
     methods: {
         ...mapActions([
             'fetchCameras',
-            'fetchClassrooms'
+            'fetchClassrooms',
+            'fetchStreams'
         ])
     }
 }

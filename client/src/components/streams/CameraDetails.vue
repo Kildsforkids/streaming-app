@@ -2,7 +2,7 @@
   <v-row>
       <v-tabs v-model="tab">
         <v-tab href="#tab-1">Превью</v-tab>
-        <v-tab href="#tab-2">Трансляция</v-tab>
+        <v-tab v-if="currentStream.link" href="#tab-2">Трансляция</v-tab>
      </v-tabs>
       <v-col cols="8">
         <v-tabs-items v-model="tab">
@@ -45,6 +45,9 @@ export default {
         camera: {
             type: Object,
             required: true
+        },
+        currentStream: {
+            type: Object
         }
     },
     data: () => ({

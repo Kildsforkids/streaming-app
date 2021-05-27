@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
     try {
         const cameras = await Camera.find().populate('classroom')
 
-        console.log(cameras)
+        // console.log(cameras)
 
         res.json(cameras)
 

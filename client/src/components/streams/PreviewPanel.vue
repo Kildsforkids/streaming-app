@@ -1,6 +1,6 @@
 <template>
     <div>
-        <CameraDetails @click:outside="hideDetails" :camera="selectedCamera" v-if="detailsVisible" />
+        <CameraDetails @click:outside="hideDetails" :camera="selectedCamera" :currentStream="currentStream" v-if="detailsVisible" />
         <v-item-group v-model="selectedCamera">
             <v-container>
                 <v-row>
@@ -36,15 +36,23 @@ export default {
         classrooms: {
             type: Array,
             required: true
+        },
+        streams: {
+            type: Array,
+            required: true
         }
     },
     data: () => ({
         detailsVisible: false,
         selectedCamera: {},
+        currentStream: {}
     }),
     watch: {
         selectedCamera(newValue) {
             if (newValue) {
+                const stream = this.streams.find(stream => (stream.camera._id === newValue._id) && stream.status === 'Идет')
+                console.log(stream)
+                this.currentStream = {}
                 this.showDetails()
             } else {
                 this.hideDetails()

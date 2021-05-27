@@ -95,7 +95,6 @@ export default class CameraController {
         }
         console.log(liveUrl)
         console.log(_liveUrl)
-        return
         await axios.post(`http://${ip}:20000/osc/commands/execute`, {
             name: 'camera._startLive',
             parameters: {
@@ -107,7 +106,7 @@ export default class CameraController {
                 bitrate: 15000,
                 logMode: 0,
                 // rtmp://a.rtmp.youtube.com/live2
-                liveUrl: 'rtmp://192.168.1.188/live',//only available in origin live mode, pass rtmp url without stream name. eg. rtmp://127.0.0.1/live
+                liveUrl,//only available in origin live mode, pass rtmp url without stream name. eg. rtmp://127.0.0.1/live
                 saveOrigin: false 
             },
             stiching: { //stitching is only needed in normal mode, do not pass this param for origin live mode
@@ -119,7 +118,7 @@ export default class CameraController {
                 bitrate: 10240,
                 map: 'equirectangular',
                 // rtmp://a.rtmp.youtube.com/live2/${streamKey}
-                _liveUrl: `rtmp://192.168.1.188/live/live`, //rtmp url, like rtmp://127.0.0.1/live/test
+                _liveUrl, //rtmp url, like rtmp://127.0.0.1/live/test
                 liveOnHdmi: false, 
                 fileSave: false //save live stream on the camera.
             },
@@ -137,7 +136,7 @@ export default class CameraController {
             count: -1 //count = -1 means always try to reconnect
             },
             stabilization: false
-        }, options)
+        }, this.options)
             .then(response => {
                 console.log(response.data)
             })
@@ -162,7 +161,7 @@ export default class CameraController {
                 if (res.data.state === 'done') {
                     console.log(`Успешное подключение к ${ip}`)
                     this.updateCamera(ip, { status: 'Активна' })
-                    options = {
+                    this.options = {
                         headers: {
                             'Fingerprint': res.data.results.Fingerprint,
                             'Content-Type': 'application/json',
@@ -170,7 +169,7 @@ export default class CameraController {
                         }
                     }
         
-                    const statePolling = async () => await axios.post(`http://${ip}:20000/osc/state`, {}, options)
+                    const statePolling = async () => await axios.post(`http://${ip}:20000/osc/state`, {}, this.options)
                         .then(res => {
                             // console.log('polling')
                             setTimeout(statePolling, 1000)

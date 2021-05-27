@@ -1,6 +1,7 @@
 import {Router} from 'express'
 import StreamModel from '../models/Stream.js'
 import StreamController from '../controllers/StreamController.js'
+import { cameraController } from './camera.routes.js'
 import { createJob, cancelJob } from '../controllers/JobController.js'
 
 const router = Router()
@@ -28,9 +29,27 @@ router.post('/', async(req, res) => {
         if (id) {
             await streamController.updateStream(id, { name, start, end, camera })
                 .then(response => {
-                    // cancelJob(id + '-start')
-                    console.log(response)
-                    // createJob()
+                    cancelJob(id + '-start')
+                        .then(() => {
+                            createJob(id + '-start', start, (title, scheduledStartTime) => {
+                                streamController.insertLiveBroadcast(title, scheduledStartTime)
+                                    .then(() => {
+                                        cameraController.cameraGoLive(camera.ip, 'jur7-u7h2-jcwv-t02y-1j1x')
+                                            .then(() => {
+                                                streamController.updateStreamStatus(id, 'Идет')
+                                            })
+                                    })
+                            }, [name, start])
+                        })
+                    cancelJob(id + '-end')
+                        .then(() => {
+                            createJob(id + '-end', end, () => {
+                                cameraController.cameraStopLive(camera.ip)
+                                    .then(() => {
+                                        streamController.updateStreamStatus(id, 'Завершена')
+                                    })
+                            })
+                        })
                     res.json({ message: 'Событие обновлено', response })
                 })
                 .catch(error => {
@@ -60,7 +79,28 @@ router.post('/', async(req, res) => {
             // })
 
             // createJob(stream._id + '-start', start, streamController.insertLiveBroadcast, [name, start])
-            createJob(stream._id + '-start', start, () => console.log('hello'))
+            cancelJob(stream._id + '-start')
+                .then(() => {
+                    createJob(stream._id + '-start', start, (title, scheduledStartTime) => {
+                        streamController.insertLiveBroadcast(title, scheduledStartTime)
+                            .then(() => {
+                                cameraController.cameraGoLive(camera.ip, 'jur7-u7h2-jcwv-t02y-1j1x')
+                                    .then(() => {
+                                        streamController.updateStreamStatus(stream._id, 'Идет')
+                                    })
+                            })
+                    }, [name, start])
+                })
+            cancelJob(stream._id + '-end')
+                .then(() => {
+                    createJob(stream._id + '-end', end, () => {
+                        cameraController.cameraStopLive(camera.ip)
+                            .then(() => {
+                                streamController.updateStreamStatus(stream._id, 'Завершена')
+                            })
+                    })
+                })
+            // createJob(stream._id + '-start', start, () => console.log('hello'))
 
             res.status(201).json({ message: 'Событие добавлено', stream })
         }
@@ -75,6 +115,7 @@ router.delete('/:id', async (req, res) => {
         await StreamModel.findByIdAndDelete(id)
 
         cancelJob(id + '-start')
+        cancelJob(id + '-end')
 
         res.json({ message: 'Событие удалено' })
 
@@ -85,7 +126,7 @@ router.delete('/:id', async (req, res) => {
 })
 router.get('/auth', async (req, res) => {
     const {code} = req.query
-    res.send(code)
+    res.send('Success')
     if (code)
         streamController.getAccessToken(code)
 })
@@ -112,6 +153,10 @@ router.post('/insert', async (req, res) => {
             res.status(403).json({ message: 'Ошибка' })
         })
 })
+// router.post('/bind', async (req, res) => {
+//     const {id} = req.body
+//     streamController.bindLiveBroadcast(id, streamId)
+// })
 router.delete('/delete/:id', async (req, res) => {
     const {id} = req.params
     streamController.deleteLiveBroadcast(id)
@@ -122,6 +167,16 @@ router.delete('/delete/:id', async (req, res) => {
         .catch(error => {
             console.error(error.message)
             res.status(403).json({ message: 'Ошибка' })
+        })
+})
+router.get('/streams', async (req, res) => {
+    streamController.getAllStreams()
+        .then(response => {
+            res.json({ data: response.data })
+        })
+        .catch(error => {
+            console.log(error.message)
+            res.status(403).json({ message: "Ошибка" })
         })
 })
 
