@@ -170,15 +170,15 @@ const client = {
 streamController.setClient(client)
 
 start()
-// cameraController.getAllCameras()
-//     .then(response => {
-//         response.map(camera => {
-//             console.log(camera.ip)
-//             cameraController.connectCamera(camera.ip)
-//         })
-//     })
-//     .catch(error => console.error(error))
-cameraController.connectCamera('192.168.0.103')
+cameraController.getAllCameras()
+    .then(response => {
+        response.map(camera => {
+            console.log(camera.ip)
+            cameraController.connectCamera(camera.ip)
+        })
+    })
+    .catch(error => console.error(error))
+// cameraController.connectCamera('192.168.0.103')
 streamController.googleAuth()
 // const date = new Date(2021, 4, 25, 23, 22)
 // createJob('1', date, hello, ['hello'])

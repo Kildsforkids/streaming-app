@@ -25,15 +25,15 @@ export default class StreamController {
     }
 
     googleAuth() {
-        const tokens = {
-            access_token: 'ya29.a0AfH6SMCaXK1d6tG7akdSCPQYuqcN6CAfBlpXiHGVH_IArAi4aQIRSngFpLbt-AN5es3Tb-eif7aohg__nIvaq_35J9W_bEF-2wXpRDWmGW_hRWF3V99kMzF76IpeOOrEZsqYknSmbavWVP3Iv-1lgqod6_kL',
-            scope: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl',
-            token_type: 'Bearer',
-            expiry_date: 1622129807206
-        }
-        this.oauth2Client.credentials = tokens
-        // const url = this.oauth2Client.generateAuthUrl({ scope: this.client.scope })
-        // opn(url)
+        // const tokens = {
+        //     access_token: 'ya29.a0AfH6SMCaXK1d6tG7akdSCPQYuqcN6CAfBlpXiHGVH_IArAi4aQIRSngFpLbt-AN5es3Tb-eif7aohg__nIvaq_35J9W_bEF-2wXpRDWmGW_hRWF3V99kMzF76IpeOOrEZsqYknSmbavWVP3Iv-1lgqod6_kL',
+        //     scope: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl',
+        //     token_type: 'Bearer',
+        //     expiry_date: 1622129807206
+        // }
+        // this.oauth2Client.credentials = tokens
+        const url = this.oauth2Client.generateAuthUrl({ scope: this.client.scope })
+        opn(url)
     }
 
     getAccessToken(code) {
@@ -201,6 +201,17 @@ export default class StreamController {
 
             return stream
 
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    async setStreamLink(id, link) {
+        try {
+            const stream = StreamModel.findByIdAndUpdate(
+                id,
+                { link }
+            )
         } catch (error) {
             console.error(error)
         }
