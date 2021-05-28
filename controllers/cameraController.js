@@ -34,113 +34,129 @@ export default class CameraController {
     }
 
     async cameraGetOptions(ip, option) {
-        await axios.post(`http://${ip}:20000/osc/commands/execute`, {
-            name: 'camera._getOptions',
-            parameters: {
-                property: option
-            }
-        }, this.options)
-            .then(response => console.log(response.data))
-            .catch(error => console.error(error.message))
+        const keyOption = this.options[ip]
+
+        if (keyOption) {
+            await axios.post(`http://${ip}:20000/osc/commands/execute`, {
+                name: 'camera._getOptions',
+                parameters: {
+                    property: option
+                }
+            }, keyOption)
+                .then(response => console.log(response.data))
+                .catch(error => console.error(error.message))
+        }
     }
 
     async cameraStartPreview(ip) {
-        await axios.post(`http://${ip}:20000/osc/commands/execute`, {
-            name: 'camera._startPreview',
-            parameters: {
+        const keyOption = this.options[ip]
+
+        if (keyOption) {
+            await axios.post(`http://${ip}:20000/osc/commands/execute`, {
+                name: 'camera._startPreview',
+                parameters: {
+                    origin: {
+                        mime: 'h264',
+                        width: 1920,
+                        height: 1440,
+                        framerate: 30,
+                        bitrate: 15000
+                    },
+                    stiching: {
+                        mode: 'pano',
+                        mime: 'h264',
+                        width: 3840,
+                        height: 1920,
+                        framerate: 30,
+                        bitrate: 10240
+                    },
+                    // audio: {
+                    //     mime: 'aac',
+                    //     sampleFormat: 's16',
+                    //     channelLayout: 'stereo',
+                    //     samplerate: 48000,
+                    //     bitrate: 128
+                    // }
+                },
+                stabilization: false
+            }, keyOption)
+                .then(response => {
+                    console.log(response.data)
+                    setTimeout(cameraStopPreview, 60 * 1000, ip)
+                })
+                .catch(error => console.error(error.message))
+        }
+    }
+
+    async cameraStopLive(ip) {
+        const keyOption = this.options[ip]
+
+        if (keyOption) {
+            await axios.post(`http://${ip}:20000/osc/commands/execute`, {
+                name: "camera._stopLive"
+            }, keyOption)
+        }
+    }
+
+    async cameraGoLive(ip, streamKey='') {
+        const keyOption = this.options[ip]
+
+        if (keyOption) {
+            let liveUrl = `rtmp://${ip}/live`
+            let _liveUrl = `rtmp://${ip}/live/live`
+            if (streamKey) {
+                liveUrl = 'rtmp://a.rtmp.youtube.com/live2'
+                _liveUrl = `rtmp://a.rtmp.youtube.com/live2/${streamKey}`
+            }
+            console.log(liveUrl)
+            console.log(_liveUrl)
+            await axios.post(`http://${ip}:20000/osc/commands/execute`, {
+                name: 'camera._startLive',
+                parameters: {
                 origin: {
                     mime: 'h264',
                     width: 1920,
                     height: 1440,
                     framerate: 30,
-                    bitrate: 15000
+                    bitrate: 15000,
+                    logMode: 0,
+                    // rtmp://a.rtmp.youtube.com/live2
+                    liveUrl,//only available in origin live mode, pass rtmp url without stream name. eg. rtmp://127.0.0.1/live
+                    saveOrigin: false 
                 },
-                stiching: {
+                stiching: { //stitching is only needed in normal mode, do not pass this param for origin live mode
                     mode: 'pano',
                     mime: 'h264',
                     width: 3840,
                     height: 1920,
                     framerate: 30,
-                    bitrate: 10240
+                    bitrate: 10240,
+                    map: 'equirectangular',
+                    // rtmp://a.rtmp.youtube.com/live2/${streamKey}
+                    _liveUrl, //rtmp url, like rtmp://127.0.0.1/live/test
+                    liveOnHdmi: false, 
+                    fileSave: false //save live stream on the camera.
                 },
-                // audio: {
-                //     mime: 'aac',
-                //     sampleFormat: 's16',
-                //     channelLayout: 'stereo',
-                //     samplerate: 48000,
-                //     bitrate: 128
-                // }
-            },
-            stabilization: false
-        }, this.options)
-            .then(response => {
-                console.log(response.data)
-                setTimeout(cameraStopPreview, 60 * 1000, ip)
-            })
-            .catch(error => console.error(error.message))
-    }
-
-    async cameraStopLive(ip) {
-        await axios.post(`http://${ip}:20000/osc/commands/execute`, {
-            name: "camera._stopLive"
-        }, this.options)
-    }
-
-    async cameraGoLive(ip, streamKey='') {
-        let liveUrl = `rtmp://${ip}/live`
-        let _liveUrl = `rtmp://${ip}/live/live`
-        if (streamKey) {
-            liveUrl = 'rtmp://a.rtmp.youtube.com/live2'
-            _liveUrl = `rtmp://a.rtmp.youtube.com/live2/${streamKey}`
+                audio: {
+                    mime: 'aac',
+                    sampleFormat: 's16',
+                    channelLayout: 'stereo',
+                    samplerate: 48000,
+                    bitrate: 128
+                }
+                },
+                autoConnect: {
+                enable: true,
+                interval: 20000, // retry delay in ms.
+                count: -1 //count = -1 means always try to reconnect
+                },
+                stabilization: false
+            }, keyOption)
+                .then(response => {
+                    console.log(response.data)
+                })
+                .catch(error => console.error(error.message))
         }
-        console.log(liveUrl)
-        console.log(_liveUrl)
-        await axios.post(`http://${ip}:20000/osc/commands/execute`, {
-            name: 'camera._startLive',
-            parameters: {
-            origin: {
-                mime: 'h264',
-                width: 1920,
-                height: 1440,
-                framerate: 30,
-                bitrate: 15000,
-                logMode: 0,
-                // rtmp://a.rtmp.youtube.com/live2
-                liveUrl,//only available in origin live mode, pass rtmp url without stream name. eg. rtmp://127.0.0.1/live
-                saveOrigin: false 
-            },
-            stiching: { //stitching is only needed in normal mode, do not pass this param for origin live mode
-                mode: 'pano',
-                mime: 'h264',
-                width: 3840,
-                height: 1920,
-                framerate: 30,
-                bitrate: 10240,
-                map: 'equirectangular',
-                // rtmp://a.rtmp.youtube.com/live2/${streamKey}
-                _liveUrl, //rtmp url, like rtmp://127.0.0.1/live/test
-                liveOnHdmi: false, 
-                fileSave: false //save live stream on the camera.
-            },
-            audio: {
-                mime: 'aac',
-                sampleFormat: 's16',
-                channelLayout: 'stereo',
-                samplerate: 48000,
-                bitrate: 128
-            }
-            },
-            autoConnect: {
-            enable: true,
-            interval: 20000, // retry delay in ms.
-            count: -1 //count = -1 means always try to reconnect
-            },
-            stabilization: false
-        }, this.options)
-            .then(response => {
-                console.log(response.data)
-            })
-            .catch(error => console.error(error.message))
     }
 
     async connectCamera(ip, retry=3) {
@@ -161,7 +177,7 @@ export default class CameraController {
                 if (res.data.state === 'done') {
                     console.log(`Успешное подключение к ${ip}`)
                     this.updateCamera(ip, { status: 'Активна' })
-                    this.options = {
+                    this.options[ip] = {
                         headers: {
                             'Fingerprint': res.data.results.Fingerprint,
                             'Content-Type': 'application/json',
@@ -191,7 +207,6 @@ export default class CameraController {
                 }
             })
             .catch(error => {
-                // console.error(error)
                 console.log(`Произошла ошибка соединения с ${ip}, попытка переподключения...`)
                 console.log(error.message)
                 setTimeout(() => {

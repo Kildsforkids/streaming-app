@@ -20,11 +20,20 @@ export default class StreamController {
         this.client = client
         this.oauth2Client = new google.Auth.OAuth2Client(client.id, client.secret, client.redirect_url)
         this.youtube = new google.youtube_v3.Youtube({ auth: this.oauth2Client })
+
+        // console.log(this.oauth2Client)
     }
 
     googleAuth() {
-        const url = this.oauth2Client.generateAuthUrl({ scope: this.client.scope })
-        opn(url)
+        const tokens = {
+            access_token: 'ya29.a0AfH6SMCaXK1d6tG7akdSCPQYuqcN6CAfBlpXiHGVH_IArAi4aQIRSngFpLbt-AN5es3Tb-eif7aohg__nIvaq_35J9W_bEF-2wXpRDWmGW_hRWF3V99kMzF76IpeOOrEZsqYknSmbavWVP3Iv-1lgqod6_kL',
+            scope: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl',
+            token_type: 'Bearer',
+            expiry_date: 1622129807206
+        }
+        this.oauth2Client.credentials = tokens
+        // const url = this.oauth2Client.generateAuthUrl({ scope: this.client.scope })
+        // opn(url)
     }
 
     getAccessToken(code) {
@@ -34,6 +43,7 @@ export default class StreamController {
                 return
             }
             this.oauth2Client.credentials = tokens
+            // console.log(this.oauth2Client)
             // console.log(tokens)
             // const scheduledStartTime = new Date(2021, 4, 25, 17, 30)
             // insertLiveBroadcast('Testing app', scheduledStartTime)
