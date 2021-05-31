@@ -210,8 +210,24 @@ export default class StreamController {
         try {
             const stream = StreamModel.findByIdAndUpdate(
                 id,
-                { link }
+                { link },
+                { new: true }
             )
+
+            return stream
+
+        } catch (error) {
+            console.error(error)
+        }
+    }
+
+    async setBroadcastStatus(id, broadcastStatus) {
+        try {
+            return await this.youtube.liveBroadcasts.transition({
+                part: ['id,status'],
+                id,
+                broadcastStatus
+            })
         } catch (error) {
             console.error(error)
         }

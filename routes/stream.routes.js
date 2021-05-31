@@ -62,23 +62,7 @@ router.post('/', async(req, res) => {
             })
     
             await stream.save()
-            //     .then(response => {
-            //         console.log(response.populate({
-            //             path: 'camera',
-            //             populate: {
-            //                 path: 'classroom'
-            //             }
-            //         }))
-            //     })
 
-            // stream = stream.populate({
-            //     path: 'camera',
-            //     populate: {
-            //         path: 'classroom'
-            //     }
-            // })
-
-            // createJob(stream._id + '-start', start, streamController.insertLiveBroadcast, [name, start])
             cancelJob(stream._id + '-start')
                 .then(() => {
                     createJob(stream._id + '-start', start, (title, scheduledStartTime) => {
@@ -100,7 +84,6 @@ router.post('/', async(req, res) => {
                             })
                     })
                 })
-            // createJob(stream._id + '-start', start, () => console.log('hello'))
 
             res.status(201).json({ message: 'Событие добавлено', stream })
         }
@@ -138,7 +121,7 @@ router.get('/list', async (req, res) => {
         })
         .catch(error => {
             console.log(error)
-            res.status(403).json({ message: "Ошибка" })
+            res.status(403).json({ message: 'Ошибка при получении списка запланированных событий', error: error.message })
         })
 })
 router.post('/insert', async (req, res) => {
@@ -150,13 +133,49 @@ router.post('/insert', async (req, res) => {
         })
         .catch(error => {
             console.log(error.message)
-            res.status(403).json({ message: 'Ошибка' })
+            res.status(403).json({ message: 'Ошибка при создании нового запланированного события', error: error.message })
         })
 })
 // router.post('/bind', async (req, res) => {
 //     const {id} = req.body
 //     streamController.bindLiveBroadcast(id, streamId)
 // })
+router.post('/:id/stop', async (req, res) => {
+    const {id} = req.params
+    streamController.setBroadcastStatus(id, 'complete')
+        .then(response => {
+            console.log('Response', response)
+            res.json({ response })
+        })
+        .catch(error => {
+            console.error(error.message)
+            res.status(403).json({ message: 'Ошибка при завершении трансляции', error: error.message })
+        })
+})
+router.post('/:id/pause', async (req, res) => {
+    const {id} = req.params
+    streamController.setBroadcastStatus(id, 'testing')
+        .then(response => {
+            console.log('Response', response)
+            res.json({ response })
+        })
+        .catch(error => {
+            console.error(error.message)
+            res.status(403).json({ message: 'Ошибка при приостановке трансляции', error: error.message })
+        })
+})
+router.post('/:id/resume', async (req, res) => {
+    const {id} = req.params
+    streamController.setBroadcastStatus(id, 'live')
+        .then(response => {
+            console.log('Response', response)
+            res.json({ response })
+        })
+        .catch(error => {
+            console.error(error.message)
+            res.status(403).json({ message: 'Ошибка при возобновлении трансляции', error: error.message })
+        })
+})
 router.delete('/delete/:id', async (req, res) => {
     const {id} = req.params
     streamController.deleteLiveBroadcast(id)
@@ -166,7 +185,7 @@ router.delete('/delete/:id', async (req, res) => {
         })
         .catch(error => {
             console.error(error.message)
-            res.status(403).json({ message: 'Ошибка' })
+            res.status(403).json({ message: 'Ошибка при удалении трансляции', error: error.message })
         })
 })
 router.get('/streams', async (req, res) => {
@@ -176,7 +195,7 @@ router.get('/streams', async (req, res) => {
         })
         .catch(error => {
             console.log(error.message)
-            res.status(403).json({ message: "Ошибка" })
+            res.status(403).json({ message: 'Ошибка при получении всех трансляций', error: error.message })
         })
 })
 

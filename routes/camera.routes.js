@@ -66,5 +66,18 @@ router.post('/live/stop', async (req, res) => {
         res.status(403).json({ message: 'Ошибка' })
     }
 })
+router.delete('/:id', async (req, res) => {
+    try {
+        const {id} = req.params
+
+        await Camera.findByIdAndDelete(id)
+
+        res.json({ message: 'Камера удалена' })
+
+    } catch (error) {
+        console.error(error.message)
+        res.status(403).json({ message: 'Ошибка при удалении камеры' })
+    }
+})
 
 export { router, cameraController }

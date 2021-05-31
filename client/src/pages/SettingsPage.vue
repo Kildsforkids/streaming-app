@@ -2,7 +2,7 @@
     <div>
         <Navbar />
         <v-container>
-            <ClassroomForm />
+            <ClassroomForm :classrooms="getAllClassrooms" />
             <CameraForm :classrooms="getAllClassrooms" />
             <CameraInfo v-for="(camera, index) in getAllCameras" :camera="camera" :index="index" :classrooms="getAllClassrooms" :key="camera.ip"/>
             <h2 v-if="getAllCameras.length <= 0">Пока еще нет добавленных камер</h2>
