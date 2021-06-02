@@ -7,6 +7,7 @@ import axios from 'axios'
 import moment from 'moment'
 import store from './store'
 import DateTimePicker from 'vuetify-datetime-picker'
+import VideoPlayer from 'vue-videojs7'
 
 Vue.prototype.axios = axios
 Vue.prototype.moment = moment
@@ -14,6 +15,7 @@ Vue.config.productionTip = false
 
 Vue.use(DateTimePicker)
 Vue.use(Vuelidate)
+Vue.use(VideoPlayer)
 
 new Vue({
   vuetify,

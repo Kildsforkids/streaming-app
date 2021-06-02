@@ -15,7 +15,7 @@
             class="float-right">
             mdi-delete
         </v-icon> -->
-        <v-list shaped>
+        <!-- <v-list shaped>
             <v-list-item-group
                 v-model="selectedClassrooms"
                 multiple>
@@ -40,14 +40,27 @@
                     </v-list-item>
                 </template>
             </v-list-item-group>
-        </v-list>
+        </v-list> -->
+        <v-autocomplete
+            v-model="selectedClassrooms"
+            :items="classrooms"
+            item-text="name"
+            return-object
+            chips
+            hide-details
+            hide-no-data
+            hide-selected
+            multiple
+            single-line>
+        </v-autocomplete>
         <p :key="classroom.name" v-for="classroom in selectedClassrooms">{{ classroom.name }}</p>
-        <!-- <v-btn
-            color="primary"
+        <v-btn
+            color="red"
             elevation="2"
-            type="submit">
-            Добавить
-        </v-btn> -->
+            @click="deleteClassrooms"
+            disabled>
+            Удалить
+        </v-btn>
         <v-snackbar
             v-model="snackbar.active"
             timeout="5000">
@@ -109,6 +122,19 @@ export default {
                     this.showSnack(`Произошла ошибка: ${error.message}`)
                 })
             }
+        },
+        async deleteClassrooms() {
+            await this.selectedClassrooms.map(async (classroom) => {
+                await this.axios.delete(`http://localhost:5000/api/classroom/${classroom._id}`)
+                    .then(response => {
+                        console.log(response.data)
+                        this.showSnack(response.data.message)
+                    })
+                    .catch(error => {
+                        console.error(error.message)
+                        this.showSnack(`Произошла ошибка: ${error.message}`)
+                    })
+            })
         },
         async showSnack(text) {
             this.snackbar.text = text

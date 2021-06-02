@@ -10,9 +10,16 @@
                 value="tab-1">
                 <v-card
                     elevation="2">
-                    <v-img
+                    <!-- <v-img
                         height="400"
-                        src="https://picsum.photos/id/11/500/300"></v-img>
+                        src="https://picsum.photos/id/11/500/300"></v-img> -->
+                    <video-player
+                        ref="videoPlayer"
+                        class="vjs-custom-skin"
+                        :options="playerOptions"
+                        @play="onPlayerPlay($event)"
+                        @ready="onPlayerReady($event)">
+                    </video-player>
                 </v-card>
             </v-tab-item>
             <v-tab-item
@@ -51,7 +58,13 @@ export default {
         }
     },
     data: () => ({
-        tab: null
+        tab: null,
+        playerOptions: {
+            autoplay: true,
+            controls: false,
+            width: 426,
+            height: 240
+        }
     }),
     computed: {
         cameraStatusColor() {
@@ -60,6 +73,29 @@ export default {
                 case 'Активна': return 'green'
             }
             return ''
+        },
+        player() {
+            return this.$refs.videoPlayer.player
+        }
+    },
+    methods: {
+        onPlayerPlay(player) {
+            console.log('Player is PLAYING!', player)
+        },
+        onPlayerReady(player) {
+            console.log('Player is READY!', player)
+            const src = 'http://localhost:3000/myLiveVideo/output3'
+            this.playVideo(src)
+        },
+        playVideo(source) {
+            const video = {
+                withCredentials: false,
+                type: 'application/x-mpegurl',
+                src: source
+            }
+            this.player.reset()
+            this.player.src(video)
+            this.player.play()
         }
     }
 }

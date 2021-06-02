@@ -126,31 +126,21 @@
                       v-model="editedItem.start">
                       <template slot="dateIcon">
                         Дата
-                        <!-- <v-icon>fas fa-calendar</v-icon> -->
                       </template>
                       <template slot="timeIcon">
                         Время
-                        <!-- <v-icon>fas fa-clock</v-icon> -->
                       </template>
                     </v-datetime-picker>
                   </v-row>
                   <v-row>
-                    <v-datetime-picker
-                      label="Дата и время окончания"
-                      clearText="Сбросить"
-                      okText="ОК"
-                      :datePickerProps="datePickerProps"
-                      :timePickerProps="timePickerProps"
-                      v-model="editedItem.end">
-                      <template slot="dateIcon">
-                        Дата
-                        <!-- <v-icon>fas fa-calendar</v-icon> -->
-                      </template>
-                      <template slot="timeIcon">
-                        Время
-                        <!-- <v-icon>fas fa-clock</v-icon> -->
-                      </template>
-                    </v-datetime-picker>
+                    <v-text-field
+                      label="Длительность"
+                      type="time"
+                      v-model="endTime">
+                    </v-text-field>
+                  </v-row>
+                  <v-row>
+                    <p>{{ getTime(parseNewDateTime(endTime, editedItem.start)) }}</p>
                   </v-row>
                     <v-row>
                       <v-text-field
@@ -292,7 +282,8 @@ export default {
           link: 'https://www.youtube.com',
           status: 'Не задана',
           camera: {}
-      }
+      },
+      endTime: '01:30'
     }),
     computed: {
       formTitle() {
@@ -309,6 +300,9 @@ export default {
       }
     },
     watch: {
+      endTime(newValue) {
+        this.editedItem.end = this.parseNewDateTime(newValue, this.editedItem.start)
+      },
       dialog(newValue) {
           newValue || this.close()
       },
@@ -317,6 +311,13 @@ export default {
       }
     },
     methods: {
+      parseNewDateTime(timeString, startDateTime) {
+        const value = timeString.split(':')
+        const hours = parseInt(value[0])
+        const minutes = parseInt(value[1])
+        const newDateTime = this.moment(startDateTime).add(hours, 'H').add(minutes, 'm').toDate()
+        return newDateTime
+      },
       editItem(item) {
           this.editedIndex = this.streams.indexOf(item)
           item.start = new Date(item.start)
