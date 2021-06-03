@@ -8,24 +8,25 @@
                 dark
                 height="200"
                 @click="toggle"
-                >
-                <v-row>
-                    <video-player
-                        ref="videoPlayer"
-                        class="vjs-custom-skin"
-                        :options="playerOptions"
-                        @play="onPlayerPlay($event)"
-                        @ready="onPlayerReady($event)">
-                    </video-player>
-                </v-row>
-                <v-row>
-                    <v-col>
+                max-width="230"
+                max-height="140">
+                <v-layout column class="pa-3">
+                    <v-layout row justify-center>
+                        <video-player
+                            ref="videoPlayer"
+                            class="vjs-custom-skin"
+                            :options="playerOptions"
+                            @play="onPlayerPlay($event)"
+                            @ready="onPlayerReady($event)">
+                        </video-player>
+                    </v-layout>
+                    <!-- <v-flex xs6>
                         <v-card-title>{{ `Камера ${index}` }}</v-card-title>
-                    </v-col>
-                    <v-col>
+                    </v-flex>
+                    <v-flex xs6>
                         <v-btn v-if="hover">{{ camera.status === 'Неактивна' ? 'Включить' : 'Выключить' }}</v-btn>
-                    </v-col>
-                </v-row>
+                    </v-flex> -->
+                </v-layout>
             </v-card>
         </v-hover>
     </v-item>

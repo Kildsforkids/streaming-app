@@ -83,6 +83,9 @@
       <template v-slot:item.end="item">
         <span>{{ getTime(item.value) }}</span>
       </template>
+      <template v-slot:item.status="item">
+        <v-chip small :class="streamStatusColor(item.value)">{{ item.value }}</v-chip>
+      </template>
       <template v-slot:top>
         <v-toolbar
           flat
@@ -311,6 +314,13 @@ export default {
       }
     },
     methods: {
+      streamStatusColor(status) {
+        switch (status) {
+          case 'Не задана': return ''
+          case 'Завершена': return 'grey'
+        }
+        return ''
+      },
       parseNewDateTime(timeString, startDateTime) {
         const value = timeString.split(':')
         const hours = parseInt(value[0])

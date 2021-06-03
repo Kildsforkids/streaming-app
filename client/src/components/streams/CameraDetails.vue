@@ -62,8 +62,8 @@ export default {
         playerOptions: {
             autoplay: true,
             controls: false,
-            width: 426,
-            height: 240
+            width: 854,
+            height: 480
         }
     }),
     computed: {
