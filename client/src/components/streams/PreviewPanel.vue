@@ -47,8 +47,7 @@ export default {
         selectedCamera(newValue) {
             if (newValue) {
                 const stream = this.streams.find(stream => (stream.camera._id === newValue._id) && stream.status === 'Идет')
-                console.log(stream)
-                this.currentStream = {}
+                this.currentStream = stream
                 this.showDetails()
             } else {
                 this.hideDetails()

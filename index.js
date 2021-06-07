@@ -10,12 +10,16 @@ import { router as cameraRouter, cameraController } from './routes/camera.routes
 import userRouter from './routes/user.routes.js'
 import { router as streamRouter, streamController } from './routes/stream.routes.js'
 import classroomRouter from './routes/classroom.routes.js'
+import ffmpeg from 'fluent-ffmpeg'
+import path from 'path'
+import fs from 'fs'
 // import CameraController from './controllers/CameraController.js'
 // import StreamController from './controllers/StreamController.js'
 
 dotenv.config()
 
 const PORT = process.env.PORT || 5000
+const __dirname = path.resolve()
 
 // const client = {
 //     id: process.env.GOOGLE_CLIENT_ID,
@@ -52,11 +56,20 @@ const app = express()
 
 app.use(cors())
 app.use(express.json())
+app.use(express.static(path.resolve(__dirname, 'public', 'videos')))
 app.use('/api/auth', authRouter)
 app.use('/api/camera', cameraRouter)
 app.use('/api/user', userRouter)
 app.use('/api/stream', streamRouter)
 app.use('/api/classroom', classroomRouter)
+app.get('/preview/:ip', async (req, res) => {
+    const {ip} = req.params
+    res.sendFile(path.resolve(__dirname, 'public', 'videos', `${ip}.m3u8`), error => {
+        if (error) {
+            console.log('Error is ' + error)
+        }
+    })
+})
 
 // app.get('/api/youtube/auth', async (req, res) => {
 //     const {code} = req.query
@@ -127,6 +140,36 @@ app.use('/api/classroom', classroomRouter)
 //     }
 // })
 
+export function startHLS(host) {
+    ffmpeg(`rtmp://${host}:1935/live/preview`, { timeout: 432000 })
+    .addOptions([
+        '-c:v libx264',
+        '-c:a aac',
+        '-ac 1',
+        '-strict -2',
+        '-crf 18',
+        '-profile:v baseline',
+        '-maxrate 400k',
+        '-bufsize 1835k',
+        '-pix_fmt yuv420p',
+        '-hls_time 10',
+        '-hls_list_size 6',
+        '-hls_wrap 10',
+        '-start_number 1'
+    ])
+    .on('start', commandLine => {
+        console.log('Spawned Ffmpeg with command: ' + commandLine)
+    })
+    .on('end', () => {
+        console.log('Finished processing')
+    })
+    .on('error', (error, stdout, stderr) => {
+        console.log('Cannot process video: ' + error.message)
+    })
+    .output(`./public/videos/${host}.m3u8`)
+    .run()
+}
+
 async function start() {
     try {
         await mongoose.connect(process.env.MONGO_URI, {
@@ -178,8 +221,10 @@ start()
 //         })
 //     })
 //     .catch(error => console.error(error))
-// cameraController.connectCamera('192.168.0.103')
-// streamController.googleAuth()
+cameraController.connectCamera('192.168.0.103')
+streamController.googleAuth()
+
+
 // const date = new Date(2021, 4, 25, 23, 22)
 // createJob('1', date, hello, ['hello'])
 // setTimeout(() => {

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import Camera from '../models/Camera.js'
+import {startHLS} from '../index.js'
 
 export default class CameraController {
 
@@ -82,7 +83,8 @@ export default class CameraController {
             }, keyOption)
                 .then(response => {
                     console.log(response.data)
-                    setTimeout(cameraStopPreview, 60 * 1000, ip)
+                    startHLS(ip)
+                    // setTimeout(cameraStopPreview, 60 * 1000, ip)
                 })
                 .catch(error => console.error(error.message))
         }
@@ -161,7 +163,6 @@ export default class CameraController {
 
     async connectCamera(ip, retry=3) {
         if (retry <= 0) {
-            this.updateCamera(ip, { status: 'Неактивна' })
             setTimeout(() => {
                 this.connectCamera(ip)
             }, 60000)
@@ -193,7 +194,7 @@ export default class CameraController {
                         .catch(error => {
                             // console.error(error)
                             console.log(`Произошла ошибка при получении состояния у ${ip}`)
-                            // cameraController.updateCamera(ip, { status: 'Неактивна' })
+                            cameraController.updateCamera(ip, { status: 'Неактивна' })
                             setTimeout(() => {
                                 this.connectCamera(ip, retry - 1)
                             }, 30000)
@@ -202,7 +203,7 @@ export default class CameraController {
                     statePolling()
     
                     // cameraGetOptions(ip, 'map')
-                    // cameraStartPreview(ip)
+                    this.cameraStartPreview(ip)
                     // cameraGoLive(ip, 'jur7-u7h2-jcwv-t02y-1j1x')
                 }
             })

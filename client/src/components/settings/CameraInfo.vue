@@ -1,10 +1,10 @@
 <template>
     <div>
         <h2>{{ `Камера ${index}` }}</h2>
-        <h5>{{ `IP-адрес ${camera.ip}` }}</h5>
-        <h5>{{ `Аудитория ${camera.classroom.name}` }}</h5>
+        <h5>{{ `IP-адрес: ${camera.ip}` }}</h5>
+        <h5>{{ `Аудитория: ${camera.classroom.name}` }}</h5>
         <div :class="`body-2 white--text ${cameraStatusColor}`" v-text="`Статус: ${camera.status}`"></div>
-        <v-btn class="mt-3" @click="deleteCamera" color="red">Удалить</v-btn>
+        <v-btn class="mt-3" @click="deleteCamera" dark color="red">Удалить</v-btn>
         <v-divider class="mt-5"></v-divider>
         <v-snackbar
             v-model="snackbar.active"

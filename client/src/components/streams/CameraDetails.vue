@@ -2,9 +2,9 @@
   <v-row>
       <v-tabs v-model="tab">
         <v-tab href="#tab-1">Превью</v-tab>
-        <v-tab href="#tab-2">Трансляция</v-tab>
+        <v-tab v-if="currentStream" href="#tab-2">Трансляция</v-tab>
      </v-tabs>
-      <v-col cols="8">
+      <v-col cols="6">
         <v-tabs-items v-model="tab">
             <v-tab-item
                 value="tab-1">
@@ -26,16 +26,22 @@
                 value="tab-2">
                 <v-card
                     elevation="2">
-                    <iframe
+                    <youtube
+                        :video-id="youtubeId"
+                        ref="youtube"
+                        height="480"
+                        width="854">
+                    </youtube>
+                    <!-- <iframe
                         height="400"
                         width="600"
                         src="https://www.youtube.com/embed/ZBb6Ca1084k"
-                        frameborder="0"></iframe>
+                        frameborder="0"></iframe> -->
                 </v-card>
             </v-tab-item>
         </v-tabs-items>
       </v-col>
-      <v-col cols="4">
+      <v-col cols="6">
           <div>
               <h3>{{ `Камера ${camera.classroom.name}` }}</h3>
               <h5>{{ `IP-адрес: ${camera.ip}` }}</h5>
@@ -64,7 +70,8 @@ export default {
             controls: false,
             width: 854,
             height: 480
-        }
+        },
+        youtubeId: 'ZBb6Ca1084k'
     }),
     computed: {
         cameraStatusColor() {
@@ -76,6 +83,9 @@ export default {
         },
         player() {
             return this.$refs.videoPlayer.player
+        },
+        youtubePlayer() {
+            return this.$refs.youtube.player
         }
     },
     methods: {
@@ -84,8 +94,8 @@ export default {
         },
         onPlayerReady(player) {
             console.log('Player is READY!', player)
-            const src = 'http://localhost:3000/myLiveVideo/output3'
-            this.playVideo(src)
+            // const src = 'http://localhost:3000/myLiveVideo/output3'
+            // this.playVideo(src)
         },
         playVideo(source) {
             const video = {
@@ -96,7 +106,20 @@ export default {
             this.player.reset()
             this.player.src(video)
             this.player.play()
+        },
+        async showPreview() {
+            const src = `http://localhost:5000/preview/${this.camera.ip}`
+            await this.axios.get(src)
+                .then(response => {
+                    this.playVideo(src)
+                })
+                .catch(error => {
+                    console.error(error.message)
+                })
         }
+    },
+    mounted() {
+        this.showPreview()
     }
 }
 </script>

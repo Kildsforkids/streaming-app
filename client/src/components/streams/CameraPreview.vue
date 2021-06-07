@@ -3,10 +3,10 @@
         <v-hover v-slot="{ hover }">
             <v-card
                 :elevation="hover ? 12 : 2"
-                :color="active ? 'primary' : ''"
+                :color="active ? 'primary' : colorOnStatus"
                 class="d-flex align-center"
-                dark
                 height="200"
+                dark
                 @click="toggle"
                 max-width="230"
                 max-height="140">
@@ -56,6 +56,13 @@ export default {
     computed: {
         player() {
             return this.$refs.videoPlayer.player
+        },
+        colorOnStatus() {
+            switch (this.camera.status) {
+                case 'Неактивна': return 'red'
+                case 'Активна': return 'green'
+            }
+            return ''
         }
     },
     methods: {
@@ -74,11 +81,20 @@ export default {
             this.player.reset()
             this.player.src(video)
             this.player.play()
+        },
+        async showPreview() {
+            const src = `http://localhost:5000/preview/${this.camera.ip}`
+            await this.axios.get(src)
+                .then(response => {
+                    this.playVideo(src)
+                })
+                .catch(error => {
+                    console.error(error.message)
+                })
         }
     },
     mounted() {
-        const src = ''
-        // this.playVideo(src)
+        this.showPreview()
     }
 }
 </script>
