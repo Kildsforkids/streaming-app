@@ -71,75 +71,6 @@ app.get('/preview/:ip', async (req, res) => {
     })
 })
 
-// app.get('/api/youtube/auth', async (req, res) => {
-//     const {code} = req.query
-//     res.send(code)
-//     if (code)
-//         streamController.getAccessToken(code)
-// })
-// app.get('/api/youtube/list', async (req, res) => {
-//     streamController.getAllBroadcasts()
-//         .then(response => {
-//             const result = response.data.items
-//             res.json({ result })
-//         })
-//         .catch(error => {
-//             console.log(error)
-//             res.status(403).json({ message: "Ошибка" })
-//         })
-// })
-// app.post('/api/youtube/insert', async (req, res) => {
-//     const {title, scheduledStartTime} = req.body
-//     streamController.insertLiveBroadcast(title, scheduledStartTime)
-//         .then(response => {
-//             console.log('Response', response)
-//             res.json({ response })
-//         })
-//         .catch(error => {
-//             console.log(error.message)
-//             res.status(403).json({ message: 'Ошибка' })
-//         })
-// })
-// app.delete('/api/youtube/delete/:id', async (req, res) => {
-//     const {id} = req.query
-//     streamController.deleteLiveBroadcast(id)
-//         .then(response => {
-//             console.log('Response', response)
-//             res.json({ response })
-//         })
-//         .catch(error => {
-//             console.error(error.message)
-//             res.status(403).json({ message: 'Ошибка' })
-//         })
-// })
-// app.post('/api/camera/live/start', async (req, res) => {
-//     try {
-//         const {ip} = req.body
-//         cameraController.cameraGoLive(ip, 'jur7-u7h2-jcwv-t02y-1j1x')
-//             .then(response => {
-//                 console.log('Response', response)
-//                 res.json({ response })
-//             })
-//         res.json({ message: req.body })
-//     } catch (error) {
-//         console.error(error)
-//         res.status(403).json({ message: 'Ошибка' })
-//     }
-// })
-// app.post('/api/camera/live/stop', async (req, res) => {
-//     try {
-//         const {ip} = req.body
-//         cameraController.cameraStopLive(ip)
-//             .then(response => {
-//                 console.log('Response', response)
-//                 res.json({ response })
-//             })
-//     } catch (error) {
-//         console.error(error)
-//         res.status(403).json({ message: 'Ошибка' })
-//     }
-// })
-
 export function startHLS(host) {
     ffmpeg(`rtmp://${host}:1935/live/preview`, { timeout: 432000 })
     .addOptions([
@@ -178,26 +109,11 @@ async function start() {
             useCreateIndex: true,
             useFindAndModify: false
         })
-        // const tokens = {
-        //     access_token: process.env.GOOGLE_TOKEN,
-        //     scope: 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.force-ssl',
-        //     token_type: 'Bearer',
-        //     expiry_date: 1621902314985
-        // }
-        // oauth2Client.credentials = tokens
         app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}...`))
     } catch (error) {
         console.error(error)
     }
 }
-
-// async function hello(msg) {
-//     try {
-//         console.log(msg)
-//     } catch (error) {
-//         console.error(error)
-//     }
-// }
 
 const client = {
     id: process.env.GOOGLE_CLIENT_ID,
@@ -213,40 +129,13 @@ const client = {
 streamController.setClient(client)
 
 start()
-// cameraController.getAllCameras()
-//     .then(response => {
-//         response.map(camera => {
-//             console.log(camera.ip)
-//             cameraController.connectCamera(camera.ip)
-//         })
-//     })
-//     .catch(error => console.error(error))
-cameraController.connectCamera('192.168.0.103')
+cameraController.getAllCameras()
+    .then(response => {
+        response.map(camera => {
+            console.log(camera.ip)
+            cameraController.connectCamera(camera.ip)
+        })
+    })
+    .catch(error => console.error(error))
+// cameraController.connectCamera('192.168.0.103')
 streamController.googleAuth()
-
-
-// const date = new Date(2021, 4, 25, 23, 22)
-// createJob('1', date, hello, ['hello'])
-// setTimeout(() => {
-//     if (cancelJob('1')) {
-//         console.log('YES')
-//     } else {
-//         console.log('NO')
-//     }
-// }, 10000)
-// googleAuth()
-// connectCamera('192.168.1.188')
-//     .then(() => {
-//         const date = new Date(2021, 4, 25, 16, 58)
-//         const job = schedule.scheduleJob(date, () => {
-//             cameraStartPreview('192.168.1.188')
-//         })
-//     })
-// cameraController.getAllCameras()
-//     .then(response => {
-//         response.map(camera => {
-//             console.log(camera.ip)
-//             connectCamera(camera.ip)
-//         })
-//     })
-//     .catch(error => console.error(error))

@@ -17,20 +17,21 @@ router.get('/', async (req, res) => {
         res.status(500).json({ message: 'Что-то пошло не так, попробуйте снова' })
     }
 })
-router.post('/', async(req, res) => {
+router.post('/', async (req, res) => {
     try {
         const {ip, classroom} = req.body
 
         const existing = await Camera.findOne({ ip })
 
         if (existing) {
+            cameraController.connectCamera(ip)
             return res.json({ camera: existing })
         }
 
         const camera = new Camera({
             ip, classroom
         })
-
+        cameraController.connectCamera(ip)
         await camera.save()
 
         res.status(201).json({ message: 'Камера добавлена', camera })

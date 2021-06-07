@@ -194,7 +194,7 @@ export default class CameraController {
                         .catch(error => {
                             // console.error(error)
                             console.log(`Произошла ошибка при получении состояния у ${ip}`)
-                            cameraController.updateCamera(ip, { status: 'Неактивна' })
+                            this.updateCamera(ip, { status: 'Неактивна' })
                             setTimeout(() => {
                                 this.connectCamera(ip, retry - 1)
                             }, 30000)
@@ -210,6 +210,7 @@ export default class CameraController {
             .catch(error => {
                 console.log(`Произошла ошибка соединения с ${ip}, попытка переподключения...`)
                 console.log(error.message)
+                this.updateCamera(ip, { status: 'Неактивна' })
                 setTimeout(() => {
                     this.connectCamera(ip, retry - 1)
                 }, 30000)

@@ -51,6 +51,9 @@ export default {
                     context.commit('setStreams', response.data)
                 })
                 .catch(error => console.error(error))
+        },
+        async fetchLogs(context) {
+            // await axios.get('http://localhost:5000/api/user/logs')
         }
     }
 }
