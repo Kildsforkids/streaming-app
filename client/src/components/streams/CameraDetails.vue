@@ -52,6 +52,8 @@
 </template>
 
 <script>
+import {$authHost} from '../../http'
+
 export default {
     name: 'CameraDetails',
     props: {
@@ -67,11 +69,13 @@ export default {
         tab: null,
         playerOptions: {
             autoplay: true,
-            controls: false,
+            controls: true,
             width: 854,
             height: 480
         },
-        youtubeId: 'ZBb6Ca1084k'
+        youtubeId: 'ROJJX0SrfOc'
+        // ROJJX0SrfOc
+        // dPA5mKITJ8c
     }),
     computed: {
         cameraStatusColor() {
@@ -108,8 +112,10 @@ export default {
             this.player.play()
         },
         async showPreview() {
-            const src = `http://localhost:5000/preview/${this.camera.ip}`
-            await this.axios.get(src)
+            const src = `http://localhost:5000/preview?ip=${this.camera.ip}`
+            await $authHost.get('preview', {
+                params: { ip: this.camera.ip }
+            })
                 .then(response => {
                     this.playVideo(src)
                 })
@@ -118,7 +124,7 @@ export default {
                 })
         }
     },
-    mounted() {
+    updated() {
         this.showPreview()
     }
 }

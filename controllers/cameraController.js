@@ -90,6 +90,16 @@ export default class CameraController {
         }
     }
 
+    async cameraStopPreview(ip) {
+        const keyOption = this.options[ip]
+
+        if (keyOption) {
+            return await axios.post(`http://${ip}:20000/osc/commands/execute`, {
+                name: "camera._stopPreview"
+            }, keyOption)
+        }
+    }
+
     async cameraStopLive(ip) {
         const keyOption = this.options[ip]
 
@@ -174,7 +184,7 @@ export default class CameraController {
                     time_zone: 'Asia/Vladivostok'
                 }
             })
-            .then(res => {
+            .then(async res => {
                 if (res.data.state === 'done') {
                     console.log(`Успешное подключение к ${ip}`)
                     this.updateCamera(ip, { status: 'Активна' })
@@ -203,7 +213,10 @@ export default class CameraController {
                     statePolling()
     
                     // cameraGetOptions(ip, 'map')
-                    this.cameraStartPreview(ip)
+                    await this.cameraStopPreview(ip)
+                        .then(async response => {
+                            await this.cameraStartPreview(ip)
+                        })
                     // cameraGoLive(ip, 'jur7-u7h2-jcwv-t02y-1j1x')
                 }
             })

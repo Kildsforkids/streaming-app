@@ -10,7 +10,7 @@
                     <CameraForm class="mt-2" :classrooms="getAllClassrooms" />
                     <h2 class="mt-2">Информация по камерам</h2>
                     <CameraInfo class="mt-2" v-for="(camera, index) in getAllCameras" :camera="camera" :index="index" :classrooms="getAllClassrooms" :key="camera.ip"/>
-                    <h2 v-if="getAllCameras.length <= 0">Пока еще нет добавленных камер</h2>
+                    <h4 v-if="getAllCameras.length <= 0">Пока еще нет добавленных камер</h4>
                 </v-col>
             </v-row>
         </v-container>

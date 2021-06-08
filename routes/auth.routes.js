@@ -3,8 +3,17 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import {check, validationResult} from 'express-validator'
 import User from '../models/User.js'
+import authMiddleware from '../middleware/authMiddleware.js'
 
 const router = Router()
+
+const generateJwt = (id) => {
+    return jwt.sign(
+        {userId: id},
+        process.env.JWT_SECRET,
+        {expiresIn: '24h'}
+    )
+}
 
 router.post(
     '/register',
@@ -74,16 +83,21 @@ router.post(
             return res.status(400).json({ message: 'Неверный пароль, попробуйте снова' })
         }
 
-        const token = jwt.sign(
-            {userId: user.id},
-            process.env.JWT_SECRET,
-            {expiresIn: '1h'}
-        )
+        const token = generateJwt(user.id)
 
         res.json({ token, userId: user.id })
 
     } catch (error) {
         res.status(500).json({ message: 'Что-то пошло не так, попробуйте снова' })
+    }
+})
+
+router.get('/check', authMiddleware, async (req, res) => {
+    try {
+        const token = generateJwt(req.user.id)
+        return res.json({ token })
+    } catch (error) {
+        res.status(500).json({ message: 'Что-то пошло не так, попробуйте снова', error: error.message })
     }
 })
 

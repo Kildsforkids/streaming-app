@@ -33,6 +33,8 @@
 </template>
 
 <script>
+import {$authHost} from '../../http'
+
 export default {
     name: 'CameraPreview',
     props: {
@@ -83,8 +85,10 @@ export default {
             this.player.play()
         },
         async showPreview() {
-            const src = `http://localhost:5000/preview/${this.camera.ip}`
-            await this.axios.get(src)
+            const src = `http://localhost:5000/preview?ip=${this.camera.ip}`
+            await $authHost.get('preview', {
+                params: { ip: this.camera.ip }
+            })
                 .then(response => {
                     this.playVideo(src)
                 })

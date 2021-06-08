@@ -17,17 +17,37 @@
             @input="$v.ip.$touch()"
             @blur="$v.ip.$touch()">
         </v-text-field>
-        <v-btn
-            color="primary"
-            elevation="2">
-            Добавить
-        </v-btn>
+        <v-row justify="end">
+            <v-btn
+                color="primary"
+                elevation="2"
+                @click="addCamera">
+                Добавить
+            </v-btn>
+        </v-row>
+        <v-snackbar
+            v-model="snackbar.active"
+            timeout="5000">
+            {{ snackbar.text }}
+
+            <template v-slot:action="{ attrs }">
+                <v-btn
+                    color="blue"
+                    text
+                    v-bind="attrs"
+                    @click="snackbar.active = false">
+                    Закрыть
+                </v-btn>
+            </template>
+        </v-snackbar>
         <v-divider class="mt-5"></v-divider>
     </v-form>
 </template>
 
 <script>
 import { required, ipAddress } from 'vuelidate/lib/validators'
+import {$authHost} from '../../http'
+import {createLog} from '../../http/userAPI'
 
 export default {
     name: 'CameraForm',
@@ -39,22 +59,35 @@ export default {
     },
     data: () => ({
         selectedClassroomId: '',
-        ip: ''
+        ip: '',
+        snackbar: {
+            active: false,
+            text: ''
+        }
     }),
     validations: {
         ip: { ipAddress }
     },
     methods: {
         async addCamera() {
+            console.log('hay')
             if (this.selectedClassroomId && this.ip) {
-                console.log('submitted')
-                // await this.axios.post('http://localhost:5000/api/camera', {
-                //     ip: this.ip, classroom: this.selectedClassroomId
-                // })
-                // .then(response => console.log(response.data))
-                // .catch(error => console.error(error))
-                // this.ip = ''
+                await $authHost.post('api/camera', {
+                    ip: this.ip, classroom: this.selectedClassroomId
+                })
+                .then(async response => {
+                    console.log(response.data)
+                    this.showSnack(response.data.message)
+                    this.$store.commit('addCamera', response.data.camera)
+                    await createLog('Добавление объекта', `Камера ${this.ip} добавлена`)
+                    this.ip = ''
+                })
+                .catch(error => console.error(error))
             }
+        },
+        async showSnack(text) {
+            this.snackbar.text = text
+            this.snackbar.active = true
         }
     },
     computed: {

@@ -6,8 +6,8 @@
           label="Начало периода"
           clearText="Сбросить"
           okText="ОК"
-          :datePickerProps="datePickerProps"
-          :timePickerProps="timePickerProps"
+          :datePickerProps="filterDatePickerProps"
+          :timePickerProps="filterTimePickerProps"
           v-model="filterStart">
           <template slot="dateIcon">
             Дата
@@ -24,8 +24,8 @@
           label="Конец периода"
           clearText="Сбросить"
           okText="ОК"
-          :datePickerProps="datePickerProps"
-          :timePickerProps="timePickerProps"
+          :datePickerProps="filterDatePickerProps"
+          :timePickerProps="filterTimePickerProps"
           v-model="filterEnd">
           <template slot="dateIcon">
             Дата
@@ -185,11 +185,12 @@
           </v-dialog>
           <v-dialog v-model="dialogDelete" max-width="500px">
             <v-card>
-              <v-card-title class="headline">Вы уверены, что хотите удалить событие?</v-card-title>
+              <v-card-title
+                class="headline">Вы уверены,<br>что хотите удалить событие?</v-card-title>
               <v-card-actions>
                 <v-spacer></v-spacer>
-                <v-btn color="blue darken-1" text @click="closeDelete">Отмена</v-btn>
-                <v-btn color="blue darken-1" text @click="deleteItemConfirm">ОК</v-btn>
+                <v-btn color="blue darken-1" text @click="closeDelete">Нет</v-btn>
+                <v-btn color="blue darken-1" text @click="deleteItemConfirm">Да</v-btn>
                 <v-spacer></v-spacer>
               </v-card-actions>
             </v-card>
@@ -213,11 +214,29 @@
         </v-icon>
       </template>
     </v-data-table>
+    <v-snackbar
+        v-model="snackbar.active"
+        timeout="5000">
+        {{ snackbar.text }}
+
+        <template v-slot:action="{ attrs }">
+            <v-btn
+                color="blue"
+                text
+                v-bind="attrs"
+                @click="snackbar.active = false">
+                Закрыть
+            </v-btn>
+        </template>
+    </v-snackbar>
   </div>
   
 </template>
 
 <script>
+import {$authHost} from '../../http'
+import {createLog} from '../../http/userAPI'
+
 export default {
     name: 'StreamsTable',
     props: {
@@ -246,13 +265,19 @@ export default {
         'Идет',
         'Завершена'
       ],
+      filterDatePickerProps: {
+        locale: 'ru-ru'
+      },
+      filterTimePickerProps: {
+        format: '24hr'
+      },
       datePickerProps: {
         locale: 'ru-ru',
         'allowed-dates': val => new Date(val) > new Date()
       },
       timePickerProps: {
         format: '24hr',
-        'allowed-hours': val => val > new Date().getHours()
+        // 'allowed-hours': val => val > new Date().getHours()
       },
       menuStart: false,
       menuEnd: false,
@@ -286,7 +311,11 @@ export default {
           status: 'Не задана',
           camera: {}
       },
-      endTime: '01:30'
+      endTime: '01:30',
+      snackbar: {
+        active: false,
+        text: ''
+      }
     }),
     computed: {
       formTitle() {
@@ -318,6 +347,7 @@ export default {
         switch (status) {
           case 'Не задана': return ''
           case 'Завершена': return 'grey'
+          case 'Идет': return 'success'
         }
         return ''
       },
@@ -341,9 +371,11 @@ export default {
           this.dialogDelete = true
       },
       async deleteItemConfirm() {
-          await this.axios.delete(`http://localhost:5000/api/stream/${this.editedItem._id}`)
-            .then(response => {
-              console.log(response)
+          await $authHost.delete(`api/stream/${this.editedItem._id}`)
+            .then(async response => {
+              // console.log(response)
+              this.showSnack(response.data.message)
+              await createLog('Удаление события', `Событие: ${this.editedItem.name} удалено`)
               this.streams.splice(this.editedIndex, 1)
               this.closeDelete()
             })
@@ -362,15 +394,17 @@ export default {
           })
       },
       async save() {
-          await this.axios.post('http://localhost:5000/api/stream', {
+          await $authHost.post('api/stream', {
             id: this.editedItem._id,
             name: this.editedItem.name,
             start: this.editedItem.start,
             end: this.editedItem.end,
             camera: this.editedItem.camera
           })
-          .then(response => {
-            console.log(response.data)
+          .then(async response => {
+            // console.log(response.data)
+            this.showSnack(response.data.message)
+            await createLog('Добавление события', `Событие: ${this.editedItem.name} добавлено`)
             if (this.editedIndex > -1) {
               // console.log(this.editedItem)
               // Object.assign(this.streams[this.editedIndex], this.editedItem)
@@ -386,6 +420,10 @@ export default {
       },
       getTime(time) {
         return this.moment(time).format('DD.MM.YY, HH:mm')
+      },
+      async showSnack(text) {
+        this.snackbar.text = text
+        this.snackbar.active = true
       }
     }
 }

@@ -4,7 +4,9 @@
         <h5>{{ `IP-адрес: ${camera.ip}` }}</h5>
         <h5>{{ `Аудитория: ${camera.classroom.name}` }}</h5>
         <div :class="`body-2 white--text ${cameraStatusColor}`" v-text="`Статус: ${camera.status}`"></div>
-        <v-btn class="mt-3" @click="deleteCamera" dark color="red">Удалить</v-btn>
+        <v-row class="mt-5" justify="end">
+            <v-btn @click="deleteCamera" dark color="red">Удалить</v-btn>
+        </v-row>
         <v-divider class="mt-5"></v-divider>
         <v-snackbar
             v-model="snackbar.active"
@@ -25,6 +27,9 @@
 </template>
 
 <script>
+import {$authHost} from '../../http'
+import {createLog} from '../../http/userAPI'
+
 export default {
     name: 'CameraInfo',
     props: {
@@ -58,10 +63,12 @@ export default {
     },
     methods: {
         async deleteCamera() {
-            await this.axios.delete(`http://localhost:5000/api/camera/${this.camera._id}`)
-                .then(response => {
-                    // console.log(response)
+            await $authHost.delete(`api/camera/${this.camera._id}`)
+                .then(async response => {
+                    console.log(response.data)
                     this.showSnack(response.data.message)
+                    await createLog('Удаление объекта', `Камера ${this.camera.ip} удалена`)
+                    this.$store.commit('deleteCamera', this.camera)
                 })
                 .catch(error => {
                     console.error(error)

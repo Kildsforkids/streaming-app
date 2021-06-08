@@ -22,9 +22,29 @@ router.get('/', async (req, res) => {
         res.status(500).json({ message: 'Что-то пошло не так, попробуйте снова' })
     }
 })
-router.post('/', async(req, res) => {
+router.post('/', async (req, res) => {
     try {
         const {name, start, end, camera, id} = req.body
+
+        const startsIn = await StreamModel.findOne({
+            camera,
+            start: {
+                $gte: start,
+                $lt: end
+            }
+        })
+        const endsIn = await StreamModel.findOne({
+            camera,
+            end: {
+                $gte: start,
+                $lt: end
+            }
+        })
+
+        if (startsIn || endsIn) {
+            console.log('Уже есть запланированная трансляция на данный период')
+            return res.json({ message: 'Уже есть запланированная трансляция на этот период' })
+        }
 
         if (id) {
             await streamController.updateStream(id, { name, start, end, camera })
@@ -33,10 +53,11 @@ router.post('/', async(req, res) => {
                         .then(() => {
                             createJob(id + '-start', start, (title, scheduledStartTime) => {
                                 streamController.insertLiveBroadcast(title, scheduledStartTime)
-                                    .then(() => {
+                                    .then(response => {
                                         cameraController.cameraGoLive(camera.ip, 'jur7-u7h2-jcwv-t02y-1j1x')
-                                            .then(() => {
-                                                streamController.updateStreamStatus(id, 'Идет')
+                                            .then(async () => {
+                                                await streamController.updateStreamStatus(id, 'Идет')
+                                                // await streamController.setStreamLink(id, 'complete')
                                             })
                                     })
                             }, [name, start])
@@ -45,8 +66,9 @@ router.post('/', async(req, res) => {
                         .then(() => {
                             createJob(id + '-end', end, () => {
                                 cameraController.cameraStopLive(camera.ip)
-                                    .then(() => {
+                                    .finally(() => {
                                         streamController.updateStreamStatus(id, 'Завершена')
+                                        streamController.setBroadcastStatus(id, )
                                     })
                             })
                         })
@@ -67,10 +89,16 @@ router.post('/', async(req, res) => {
                 .then(() => {
                     createJob(stream._id + '-start', start, (title, scheduledStartTime) => {
                         streamController.insertLiveBroadcast(title, scheduledStartTime)
-                            .then(() => {
-                                cameraController.cameraGoLive(camera.ip, 'jur7-u7h2-jcwv-t02y-1j1x')
-                                    .then(() => {
-                                        streamController.updateStreamStatus(stream._id, 'Идет')
+                            .then(async response => {
+                                console.log(response.data)
+                                await cameraController.cameraStopPreview(camera.ip)
+                                    .then(response => {
+                                        setTimeout(() => {
+                                            cameraController.cameraGoLive(camera.ip, 'jur7-u7h2-jcwv-t02y-1j1x')
+                                                .then(() => {
+                                                    streamController.updateStreamStatus(stream._id, 'Идет')
+                                                })
+                                        }, 10000)
                                     })
                             })
                     }, [name, start])
@@ -81,6 +109,7 @@ router.post('/', async(req, res) => {
                         cameraController.cameraStopLive(camera.ip)
                             .then(() => {
                                 streamController.updateStreamStatus(stream._id, 'Завершена')
+                                cameraController.cameraStartPreview(camera.ip)
                             })
                     })
                 })

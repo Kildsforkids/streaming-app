@@ -41,7 +41,16 @@
                 </template>
             </v-list-item-group>
         </v-list> -->
+        <v-row justify="end">
+            <v-btn
+                color="primary"
+                elevation="2"
+                @click="addClassroom">
+                Добавить
+            </v-btn>
+        </v-row>
         <v-autocomplete
+            placeholder="Здесь можно выбрать аудитории для удаления"
             v-model="selectedClassrooms"
             :items="classrooms"
             item-text="name"
@@ -53,14 +62,17 @@
             multiple
             single-line>
         </v-autocomplete>
-        <p :key="classroom.name" v-for="classroom in selectedClassrooms">{{ classroom.name }}</p>
-        <v-btn
-            color="red"
-            elevation="2"
-            @click="deleteClassrooms"
-            disabled>
-            Удалить
-        </v-btn>
+        <!-- <p :key="classroom.name" v-for="classroom in selectedClassrooms">{{ classroom.name }}</p> -->
+        <v-row class="mt-5" justify="end">
+            <v-btn
+                color="red"
+                elevation="2"
+                dark
+                @click="deleteClassrooms">
+                Удалить
+            </v-btn>
+        </v-row>
+
         <v-snackbar
             v-model="snackbar.active"
             timeout="5000">
@@ -82,6 +94,8 @@
 
 <script>
 import { required, decimal, minLength, maxLength } from 'vuelidate/lib/validators'
+import {$authHost} from '../../http'
+import {createLog} from '../../http/userAPI'
 
 export default {
     name: 'ClassroomForm',
@@ -109,12 +123,14 @@ export default {
                 return
             }
             if (this.classroomName) {
-                await this.axios.post('http://localhost:5000/api/classroom', {
+                await $authHost.post('api/classroom', {
                     name: this.classroomName
                 })
-                .then(response => {
-                    console.log(response.data)
-                    this.showSnack(`Аудитория ${response.data.message} добавлена`)
+                .then(async response => {
+                    // console.log(response.data)
+                    this.showSnack(response.data.message)
+                    this.classrooms.push(response.data.classroom)
+                    await createLog('Добавление объекта', `Аудитория ${this.classroomName} добавлена`)
                     this.classroomName = ''
                 })
                 .catch(error => {
@@ -125,10 +141,14 @@ export default {
         },
         async deleteClassrooms() {
             await this.selectedClassrooms.map(async (classroom) => {
-                await this.axios.delete(`http://localhost:5000/api/classroom/${classroom._id}`)
-                    .then(response => {
-                        console.log(response.data)
+                await $authHost.delete(`api/classroom/${classroom._id}`)
+                    .then(async response => {
+                        // console.log(response.data)
                         this.showSnack(response.data.message)
+                        await createLog('Удаление объекта', `Аудитория ${classroom.name} удалена`)
+                        const index = this.classrooms.indexOf(classroom)
+                        if (index !== -1)
+                            this.classrooms.splice(index, 1)
                     })
                     .catch(error => {
                         console.error(error.message)

@@ -46,7 +46,12 @@ export default {
     watch: {
         selectedCamera(newValue) {
             if (newValue) {
-                const stream = this.streams.find(stream => (stream.camera._id === newValue._id) && stream.status === 'Идет')
+                const stream = this.streams.find(stream => {
+                    if (stream.camera) {
+                        return (stream.camera._id === newValue._id) && stream.status === 'Идет'
+                    }
+                    return false
+                })
                 this.currentStream = stream
                 this.showDetails()
             } else {

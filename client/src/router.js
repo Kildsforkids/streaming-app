@@ -4,6 +4,8 @@ import MainPage from '@/pages/MainPage'
 import AuthPage from '@/pages/AuthPage'
 import SettingsPage from '@/pages/SettingsPage'
 import ArchivePage from '@/pages/ArchivePage'
+import store from './store'
+import {check} from './http/userAPI'
 
 Vue.use(VueRouter)
 
@@ -28,18 +30,28 @@ const router = new VueRouter({
             path: '/archive',
             meta: {auth: true},
             component: ArchivePage
+        },
+        {
+            path: '*',
+            redirect: '/'
         }
     ]
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
     const requireAuth = to.matched.some(record => record.meta.auth)
 
-    if (requireAuth && false) {
-        next('/auth')
-    } else {
-        next()
+    if (requireAuth && !store.getters.getIsAuth) {
+        await check()
+            .then(data => {
+                // console.log(data)
+                store.commit('setIsAuth', true)
+            })
+            .catch(error => {
+                next('/auth')
+            })
     }
+    next()
 })
 
 export default router

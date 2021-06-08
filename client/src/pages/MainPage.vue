@@ -6,6 +6,7 @@
             <div v-else>
                 <h2>Нет привязанных камер</h2>
             </div>
+            <v-divider class="mt-5"></v-divider>
             <StreamsTable :cameras="getAllCameras" :streams="getAllStreams" :classrooms="getAllClassrooms" />
         </v-container>
     </div>
