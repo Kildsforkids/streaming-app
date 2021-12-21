@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
         }
 
         if (id) {
-            await streamController.updateStream(id, { name, start, end, camera })
+            streamController.updateStream(id, { name, start, end, camera })
                 .then(response => {
                     cancelJob(id + '-start')
                         .then(() => {
@@ -90,7 +90,14 @@ router.post('/', async (req, res) => {
                     createJob(stream._id + '-start', start, (title, scheduledStartTime) => {
                         streamController.insertLiveBroadcast(title, scheduledStartTime)
                             .then(async response => {
-                                console.log(response.data)
+                                // console.log(response.data)
+                                const streamID = response.data.id
+                                console.log('[stream_router] stream: ' + streamID)
+
+                                // await cameraController.cameraGoLive(camera.ip, 'jur7-u7h2-jcwv-t02y-1j1x')
+                                //     .then(() => {
+                                //         streamController.updateStreamStatus(stream._id, 'Идет')
+                                //     })
                                 await cameraController.cameraStopPreview(camera.ip)
                                     .then(response => {
                                         setTimeout(() => {

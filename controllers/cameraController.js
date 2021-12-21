@@ -1,6 +1,7 @@
 import axios from 'axios'
 import Camera from '../models/Camera.js'
 import {startHLS} from '../index.js'
+import moment from 'moment'
 
 export default class CameraController {
 
@@ -13,7 +14,7 @@ export default class CameraController {
             const cameras = await Camera.find()
             return cameras
         } catch (error) {
-            console.error(error)
+            console.error('[camera_controller]' + error)
         }
     }
 
@@ -30,7 +31,7 @@ export default class CameraController {
             return camera
             
         } catch (error) {
-            console.error(error)
+            console.error('[camera_controller]' + error)
         }
     }
 
@@ -44,8 +45,8 @@ export default class CameraController {
                     property: option
                 }
             }, keyOption)
-                .then(response => console.log(response.data))
-                .catch(error => console.error(error.message))
+                .then(response => console.log('[camera_controller]' + response.data))
+                .catch(error => console.error('[camera_controller]' + error.message))
         }
     }
 
@@ -82,11 +83,12 @@ export default class CameraController {
                 stabilization: false
             }, keyOption)
                 .then(response => {
-                    console.log(response.data)
+                    console.log(`[camera_controller] camera ${ip} started preview`)
+                    console.log('[camera_controller]' + response.data)
                     startHLS(ip)
                     // setTimeout(cameraStopPreview, 60 * 1000, ip)
                 })
-                .catch(error => console.error(error.message))
+                .catch(error => console.error('[camera_controller]' + error.message))
         }
     }
 
@@ -120,8 +122,8 @@ export default class CameraController {
                 liveUrl = 'rtmp://a.rtmp.youtube.com/live2'
                 _liveUrl = `rtmp://a.rtmp.youtube.com/live2/${streamKey}`
             }
-            console.log(liveUrl)
-            console.log(_liveUrl)
+            console.log('[camera_controller]' + liveUrl)
+            console.log('[camera_controller]' + _liveUrl)
             await axios.post(`http://${ip}:20000/osc/commands/execute`, {
                 name: 'camera._startLive',
                 parameters: {
@@ -158,17 +160,25 @@ export default class CameraController {
                 }
                 },
                 autoConnect: {
-                enable: true,
-                interval: 20000, // retry delay in ms.
-                count: -1 //count = -1 means always try to reconnect
+                    enable: true,
+                    interval: 20000, // retry delay in ms.
+                    count: -1 //count = -1 means always try to reconnect
                 },
                 stabilization: false
             }, keyOption)
                 .then(response => {
-                    console.log(response.data)
+                    console.log('[camera_controller] ' + response.data)
                 })
-                .catch(error => console.error(error.message))
+                .catch(error => console.error('[camera_controller] ' + error.message))
         }
+    }
+
+    _timeStamp() {
+        const timeMoment = moment()
+        const time = timeMoment.format('MMDDhhmm')
+        const year = timeMoment.format('YYYY').match(/.{1,2}/g)
+        const seconds = timeMoment.format('.ss')
+        return `${time}[[${year[0]}]${year[1]}][${seconds}]`
     }
 
     async connectCamera(ip, retry=3) {
@@ -177,16 +187,17 @@ export default class CameraController {
                 this.connectCamera(ip)
             }, 60000)
         }
+        console.log('[camera_controller] trying to connect to ' + ip)
         await axios.post(`http://${ip}:20000/osc/commands/execute`, {
                 name: 'camera._connect',
                 parameters: {
-                    hw_time: '04051020[[20]21][.30]',
+                    hw_time: this._timeStamp(), // '04051020[[20]21][.30]'
                     time_zone: 'Asia/Vladivostok'
                 }
             })
             .then(async res => {
                 if (res.data.state === 'done') {
-                    console.log(`Успешное подключение к ${ip}`)
+                    console.log(`[camera_controller] Успешное подключение к ${ip}`)
                     this.updateCamera(ip, { status: 'Активна' })
                     this.options[ip] = {
                         headers: {
@@ -198,12 +209,10 @@ export default class CameraController {
         
                     const statePolling = async () => await axios.post(`http://${ip}:20000/osc/state`, {}, this.options)
                         .then(res => {
-                            // console.log('polling')
                             setTimeout(statePolling, 1000)
                         })
                         .catch(error => {
-                            // console.error(error)
-                            console.log(`Произошла ошибка при получении состояния у ${ip}`)
+                            console.log(`[camera_controller] Произошла ошибка при получении состояния у ${ip}`)
                             this.updateCamera(ip, { status: 'Неактивна' })
                             setTimeout(() => {
                                 this.connectCamera(ip, retry - 1)
@@ -221,8 +230,8 @@ export default class CameraController {
                 }
             })
             .catch(error => {
-                console.log(`Произошла ошибка соединения с ${ip}, попытка переподключения...`)
-                console.log(error.message)
+                console.log(`[camera_controller] Произошла ошибка соединения с ${ip}, попытка переподключения...`)
+                console.log('[camera_controller]' + error.message)
                 this.updateCamera(ip, { status: 'Неактивна' })
                 setTimeout(() => {
                     this.connectCamera(ip, retry - 1)

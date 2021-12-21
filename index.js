@@ -11,6 +11,7 @@ import { router as streamRouter, streamController } from './routes/stream.routes
 import classroomRouter from './routes/classroom.routes.js'
 import ffmpeg from 'fluent-ffmpeg'
 import path from 'path'
+import fs from 'fs'
 
 dotenv.config()
 
@@ -21,7 +22,7 @@ const app = express()
 
 app.use(cors())
 app.use(express.json())
-app.use(express.static(path.resolve(__dirname, 'public', 'videos')))
+app.use(express.static(path.join(__dirname, 'public', 'videos')))
 app.use('/api/auth', authRouter)
 app.use('/api/camera', authMiddleware, cameraRouter)
 app.use('/api/user', authMiddleware, userRouter)
@@ -29,9 +30,19 @@ app.use('/api/stream', streamRouter)
 app.use('/api/classroom', authMiddleware, classroomRouter)
 app.get('/preview', async (req, res) => {
     const {ip} = req.query
-    res.sendFile(path.resolve(__dirname, 'public', 'videos', `${ip}.m3u8`), error => {
+    const fileName = `${ip}.m3u8`
+    const filePath = path.join(__dirname, 'public', 'videos', fileName)
+    fs.stat(filePath, (error, stats) => {
         if (error) {
-            console.log('Error is ' + error)
+            console.log(`[server] file ${fileName} doesn\'t exist`)
+            res.end()
+        } else {
+            res.sendFile(filePath, error => {
+                if (error) {
+                    console.log('[preview] ' + error + '\n' + filePath)
+                    res.end()
+                }
+            })
         }
     })
 })
@@ -50,17 +61,17 @@ export function startHLS(host) {
         '-pix_fmt yuv420p',
         '-hls_time 10',
         '-hls_list_size 6',
-        '-hls_wrap 10',
+        // '-hls_wrap 10',
         '-start_number 1'
     ])
     .on('start', commandLine => {
-        console.log('Spawned Ffmpeg with command: ' + commandLine)
+        console.log('[ffmpeg] Spawned Ffmpeg with command: ' + commandLine)
     })
     .on('end', () => {
-        console.log('Finished processing')
+        console.log('[ffmpeg] Finished processing')
     })
     .on('error', (error, stdout, stderr) => {
-        console.log('Cannot process video: ' + error.message)
+        console.log('[ffmpeg] ' + error.message)
     })
     .output(`./public/videos/${host}.m3u8`)
     .run()
@@ -74,9 +85,9 @@ async function start() {
             useCreateIndex: true,
             useFindAndModify: false
         })
-        app.listen(PORT, () => console.log(`Сервер запущен на порту ${PORT}...`))
+        app.listen(PORT, () => console.log(`[server] Сервер запущен на порту ${PORT}...`))
     } catch (error) {
-        console.error(error)
+        console.error('[server] ' + error)
     }
 }
 
@@ -97,10 +108,10 @@ start()
 cameraController.getAllCameras()
     .then(response => {
         response.map(camera => {
-            console.log(camera.ip)
+            console.log('[server] found camera ' + camera.ip)
             cameraController.connectCamera(camera.ip)
         })
     })
-    .catch(error => console.error(error))
+    .catch(error => console.error('[camera_controller] ' + error))
 // cameraController.connectCamera('192.168.0.103')
 streamController.googleAuth()
