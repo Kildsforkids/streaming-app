@@ -50,18 +50,19 @@ app.get('/preview', async (req, res) => {
 export function startHLS(host) {
     ffmpeg(`rtmp://${host}:1935/live/preview`, { timeout: 432000 })
     .addOptions([
-        '-c:v libx264',
-        '-c:a aac',
-        '-ac 1',
-        '-strict -2',
-        '-crf 18',
+        '-c:v h264', // кодек, энкодер, декодер (libx264)
+        '-c:a aac', // аудио, AAC кодек
+        '-ac 1', // 1й аудиоканал
+        // '-strict -2',
+        // '-crf 18',
         '-profile:v baseline',
         '-maxrate 400k',
         '-bufsize 1835k',
         '-pix_fmt yuv420p',
-        '-hls_time 10',
-        '-hls_list_size 6',
+        // '-hls_time 10',
+        // '-hls_list_size 6',
         // '-hls_wrap 10',
+        '-hls_flags delete_segments',
         '-start_number 1'
     ])
     .on('start', commandLine => {
