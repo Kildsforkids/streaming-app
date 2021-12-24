@@ -1,10 +1,14 @@
-import axios from 'axios'
+// import axios from 'axios'
+import {$authHost} from '../http'
 
 export default {
     state: {
         cameras: [],
         classrooms: [],
-        streams: []
+        streams: [],
+        logs: [],
+        user: '',
+        isAuth: false
     },
     mutations: {
         setCameras(state, payload) {
@@ -15,6 +19,23 @@ export default {
         },
         setStreams(state, payload) {
             state.streams = payload
+        },
+        setLogs(state, payload) {
+            state.logs = payload
+        },
+        setUser(state, payload) {
+            state.user = payload
+        },
+        setIsAuth(state, payload) {
+            state.isAuth = payload
+        },
+        addCamera(state, payload) {
+            state.cameras.push(payload)
+        },
+        deleteCamera(state, payload) {
+            const index = state.cameras.indexOf(payload)
+            if (index !== -1)
+                state.cameras.splice(index, 1)
         }
     },
     getters: {
@@ -26,11 +47,20 @@ export default {
         },
         getAllStreams(state) {
             return state.streams
+        },
+        getAllLogs(state) {
+            return state.logs
+        },
+        getUser(state) {
+            return state.user
+        },
+        getIsAuth(state) {
+            return state.isAuth
         }
     },
     actions: {
         async fetchCameras(context) {
-            await axios.get('http://localhost:5000/api/camera')
+            await $authHost.get('api/camera')
                 .then(response => {
                     // console.log(response.data)
                     context.commit('setCameras', response.data)
@@ -38,7 +68,7 @@ export default {
                 .catch(error => console.error(error))
         },
         async fetchClassrooms(context) {
-            await axios.get('http://localhost:5000/api/classroom')
+            await $authHost.get('api/classroom')
                 .then(response => {
                     // console.log(response.data)
                     context.commit('setClassrooms', response.data)
@@ -46,9 +76,18 @@ export default {
                 .catch(error => console.error(error))
         },
         async fetchStreams(context) {
-            await axios.get('http://localhost:5000/api/stream')
+            await $authHost.get('api/stream')
                 .then(response => {
+                    // console.log(response.data)
                     context.commit('setStreams', response.data)
+                })
+                .catch(error => console.error(error))
+        },
+        async fetchLogs(context) {
+            await $authHost.get('api/user/logs')
+                .then(response => {
+                    // console.log(response.data)
+                    context.commit('setLogs', response.data)
                 })
                 .catch(error => console.error(error))
         }

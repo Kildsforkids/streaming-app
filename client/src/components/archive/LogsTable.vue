@@ -1,111 +1,175 @@
 <template>
-  <v-data-table
-    :headers="headers"
-    :items="logs"
-    :items-per-page="5"
-    class="elevation-1"
-  ></v-data-table>
+  <div>
+    <v-row>
+      <v-col>
+        <v-datetime-picker
+          label="Начало периода"
+          clearText="Сбросить"
+          okText="ОК"
+          :datePickerProps="datePickerProps"
+          :timePickerProps="timePickerProps"
+          v-model="filterStart">
+          <template slot="dateIcon">
+            Дата
+            <!-- <v-icon>fas fa-calendar</v-icon> -->
+          </template>
+          <template slot="timeIcon">
+            Время
+            <!-- <v-icon>fas fa-clock</v-icon> -->
+          </template>
+        </v-datetime-picker>
+      </v-col>
+      <v-col>
+        <v-datetime-picker
+          label="Конец периода"
+          clearText="Сбросить"
+          okText="ОК"
+          :datePickerProps="datePickerProps"
+          :timePickerProps="timePickerProps"
+          v-model="filterEnd">
+          <template slot="dateIcon">
+            Дата
+            <!-- <v-icon>fas fa-calendar</v-icon> -->
+          </template>
+          <template slot="timeIcon">
+            Время
+            <!-- <v-icon>fas fa-clock</v-icon> -->
+          </template>
+        </v-datetime-picker>
+      </v-col>
+      <v-col>
+        <v-select
+          :items="users"
+          label="Пользователь"
+          no-data-text="Нет данных"
+          item-text="name"
+          item-value="name"
+          v-model="filterUser"
+          multiple>
+        </v-select>
+      </v-col>
+      <v-col>
+        <v-select
+          :items="actionTypes"
+          label="Тип события"
+          no-data-text="Не заданы типы событий"
+          v-model="filterActionType"
+          multiple>
+        </v-select>
+      </v-col>
+      <v-col>
+        <v-text-field
+          v-model="filterSearch"
+          clear-icon="mdi-close-circle"
+          clearable
+          label="Поиск"
+          placeholder="Поиск по дополнительной информации..."
+          type="text"
+          @click.clear="filterSearch = ''">
+        </v-text-field>
+      </v-col>
+    </v-row>
+    <v-data-table
+      sort-by="time"
+      :sort-desc="true"
+      :headers="headers"
+      :items="filteredLogs"
+      :items-per-page="5"
+      no-data-text="Нет данных"
+      class="elevation-1">
+      <template v-slot:item.time="item">
+        <span>{{ getTime(item.value) }}</span>
+      </template>
+  </v-data-table>
+  </div>
 </template>
 
 <script>
+import { mapGetters, mapActions } from 'vuex'
+
 export default {
     name: 'LogsTable',
     data: () => ({
         headers: [
           {
-            text: 'Dessert (100g serving)',
+            text: 'Время',
             align: 'start',
-            sortable: false,
-            value: 'name',
+            value: 'time',
           },
-          { text: 'Calories', value: 'calories' },
-          { text: 'Fat (g)', value: 'fat' },
-          { text: 'Carbs (g)', value: 'carbs' },
-          { text: 'Protein (g)', value: 'protein' },
-          { text: 'Iron (%)', value: 'iron' },
+          { text: 'Пользователь', value: 'user.login' },
+          { text: 'Событие', value: 'actionType' },
+          { text: 'Описание', value: 'description' }
         ],
-        logs: [
-          {
-            name: 'Frozen Yogurt',
-            calories: 159,
-            fat: 6.0,
-            carbs: 24,
-            protein: 4.0,
-            iron: '1%',
-          },
-          {
-            name: 'Ice cream sandwich',
-            calories: 237,
-            fat: 9.0,
-            carbs: 37,
-            protein: 4.3,
-            iron: '1%',
-          },
-          {
-            name: 'Eclair',
-            calories: 262,
-            fat: 16.0,
-            carbs: 23,
-            protein: 6.0,
-            iron: '7%',
-          },
-          {
-            name: 'Cupcake',
-            calories: 305,
-            fat: 3.7,
-            carbs: 67,
-            protein: 4.3,
-            iron: '8%',
-          },
-          {
-            name: 'Gingerbread',
-            calories: 356,
-            fat: 16.0,
-            carbs: 49,
-            protein: 3.9,
-            iron: '16%',
-          },
-          {
-            name: 'Jelly bean',
-            calories: 375,
-            fat: 0.0,
-            carbs: 94,
-            protein: 0.0,
-            iron: '0%',
-          },
-          {
-            name: 'Lollipop',
-            calories: 392,
-            fat: 0.2,
-            carbs: 98,
-            protein: 0,
-            iron: '2%',
-          },
-          {
-            name: 'Honeycomb',
-            calories: 408,
-            fat: 3.2,
-            carbs: 87,
-            protein: 6.5,
-            iron: '45%',
-          },
-          {
-            name: 'Donut',
-            calories: 452,
-            fat: 25.0,
-            carbs: 51,
-            protein: 4.9,
-            iron: '22%',
-          },
-          {
-            name: 'KitKat',
-            calories: 518,
-            fat: 26.0,
-            carbs: 65,
-            protein: 7,
-            iron: '6%',
-          },
+        // logs: [],
+        filterStart: null,
+        filterEnd: null,
+        filterUser: [],
+        filterActionType: [],
+        filterSearch: '',
+        users: [
+          'keeper1'
         ],
-    })
+        actionTypes: [
+          'Создание нового события',
+          'Удаление события',
+          'Создание объекта',
+          'Удаление объекта'
+        ],
+        datePickerProps: {
+          locale: 'ru-ru'
+        },
+        timePickerProps: {
+          format: '24hr'
+        }
+    }),
+    created() {
+      this.initialize()
+    },
+    methods: {
+      ...mapActions([
+        'fetchLogs'
+      ]),
+      async initialize() {
+        // this.logs = [
+        //   {
+        //     time: this.getTimeNow,
+        //     user: 'keeper1',
+        //     actionType: 'Создание нового события',
+        //     description: ''
+        //   },
+        //   {
+        //     time: this.getTimeNow,
+        //     user: 'keeper1',
+        //     actionType: 'Удаление события',
+        //     description: 'Новая запланированная трансляция'
+        //   }
+        // ]
+        await this.fetchLogs()
+        this.setActionTypes()
+      },
+      setActionTypes() {
+        this.actionTypes = this.getAllLogs.map(log => log.actionType)
+      },
+      getTime(time) {
+        return this.moment(time).format('DD.MM.YY, HH:mm')
+      }
+    },
+    computed: {
+      ...mapGetters([
+        'getAllLogs'
+      ]),
+      getTimeNow() {
+        return this.moment().format('DD.MM.YY, HH:mm')
+      },
+      filteredLogs() {
+        return this.getAllLogs.filter(log => {
+          return (log.description.toLowerCase().indexOf(this.filterSearch.toLowerCase()) !== -1) &&
+            (this.filterUser.length ? (this.filterUser.indexOf(log.user) !== -1) : true) &&
+            (this.filterActionType.length ? (this.filterActionType.indexOf(log.actionType) !== -1) : true) &&
+            (this.filterStart ? (new Date(log.time) > new Date(this.filterStart)) : true) &&
+            (this.filterEnd ? (new Date(log.time) < new Date(this.filterEnd)) : true)
+        })
+      }
+    }
 }
 </script>

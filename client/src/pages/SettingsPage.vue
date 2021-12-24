@@ -2,10 +2,17 @@
     <div>
         <Navbar />
         <v-container>
-            <ClassroomForm />
-            <CameraForm :classrooms="getAllClassrooms" />
-            <CameraInfo v-for="(camera, index) in getAllCameras" :camera="camera" :index="index" :classrooms="getAllClassrooms" :key="camera.ip"/>
-            <h2 v-if="getAllCameras.length <= 0">Пока еще нет добавленных камер</h2>
+            <v-row class="d-flex justify-center">
+                <v-col cols="4">
+                    <h2 class="mt-2">Добавление аудиторий</h2>
+                    <ClassroomForm class="mt-2" :classrooms="getAllClassrooms" />
+                    <h2 class="mt-2">Добавление камер</h2>
+                    <CameraForm class="mt-2" :classrooms="getAllClassrooms" />
+                    <h2 class="mt-2">Информация по камерам</h2>
+                    <CameraInfo class="mt-2" v-for="(camera, index) in getAllCameras" :camera="camera" :index="index" :classrooms="getAllClassrooms" :key="camera.ip"/>
+                    <h4 v-if="getAllCameras.length <= 0">Пока еще нет добавленных камер</h4>
+                </v-col>
+            </v-row>
         </v-container>
     </div>
 </template>

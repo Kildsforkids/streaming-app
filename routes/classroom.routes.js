@@ -10,12 +10,11 @@ router.get('/', async (req, res) => {
         res.json(classrooms)
 
     } catch (error) {
-        res.status(500).json({ message: 'Что-то пошло не так, попробуйте снова' })
+        res.status(500).json({ message: 'Ошибка при получении списка аудиторий', error: error.message })
     }
 })
-router.post('/', async(req, res) => {
+router.post('/', async (req, res) => {
     try {
-        console.log(req.body)
         const {name} = req.body
 
         const existing = await Classroom.findOne({ name })
@@ -30,11 +29,22 @@ router.post('/', async(req, res) => {
 
         await classroom.save()
 
-        res.status(201).json({ message: 'Аудитория добавлена', classroom })
+        res.status(201).json({ message: `Аудитория ${name} добавлена`, classroom })
 
     } catch (error) {
-        // console.log(error)
-        res.status(500).json({ message: 'Что-то пошло не так, попробуйте снова' })
+        res.status(500).json({ message: 'Ошибка при добавлении аудитории', error: error.message })
+    }
+})
+router.delete('/:id', async (req, res) => {
+    try {
+        const {id} = req.params
+
+        await Classroom.findByIdAndDelete(id)
+
+        res.json({ message: 'Аудитория удалена' })
+
+    } catch (error) {
+        res.status(500).json({ message: 'Ошибка при удалении аудитории', error: error.message })
     }
 })
 
